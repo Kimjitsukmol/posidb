@@ -76,13 +76,11 @@
                 <div id="loadingMenu" class="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-20 backdrop-blur-sm hidden"><i class="fas fa-circle-notch fa-spin text-4xl text-blue-500 mb-3"></i><p class="text-gray-500 font-medium animate-pulse">กำลังโหลดข้อมูลสินค้า...</p></div>
                 <div id="menuGrid" class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 content-start"></div>
                 
-                <div id="noResults" class="hidden flex flex-col items-center justify-center py-10 text-center">
-                    <img src="dd.png" alt="cartoon_bowing" class="w-48 h-auto mb-6 drop-shadow-md">
-                    
-                    <h3 class="text-2xl font-bold text-blue-600 mb-4">ร้านเจ้พิน ขอบคุณที่อุดหนุนค่ะ</h3>
-                    
-                    <button onclick="fetchMenu()" class="bg-gray-100 text-gray-600 px-6 py-2.5 rounded-full text-sm font-bold hover:bg-gray-200 transition shadow-sm border border-gray-200">
-                        <i class="fas fa-sync-alt mr-2"></i> โหลดข้อมูลใหม่
+                <div id="noResults" class="hidden flex flex-col items-center justify-center py-10 text-gray-400 text-center">
+                    <i class="fas fa-box-open text-6xl mb-4 text-gray-300"></i>
+                    <p class="mb-2">ไม่พบสินค้า</p>
+                    <button onclick="fetchMenu()" class="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-200 transition">
+                        <i class="fas fa-sync-alt mr-1"></i> โหลดข้อมูลใหม่
                     </button>
                 </div>
             </div>
@@ -452,54 +450,6 @@
         </div>
     </div>
 
-    <button id="openModalBtn" style="padding: 10px 20px; font-size: 16px; cursor: pointer;">📦 จัดการรายการสินค้า</button>
-
-<div id="productModal" class="modal">
-  <div class="modal-content">
-    <span class="close-btn" id="closeModalBtn">&times;</span>
-    
-    <h2 style="margin-top: 0;">จัดการรายการสินค้าทั้งหมด</h2>
-    
-    <div class="calculator-panel">
-      <div class="calc-inputs">
-        <label>ต้นทุน: <input type="number" id="costPrice" placeholder="0" min="0"></label>
-        <label>กำไร (%): <input type="number" id="profitPercent" value="15" min="0"></label>
-        <div class="result-box">ราคาขาย: <span id="suggestedPrice">0.00</span> บาท</div>
-      </div>
-    </div>
-
-    <div style="margin-bottom: 15px; position: relative;">
-        <i class="fas fa-search" style="position: absolute; left: 12px; top: 12px; color: #888;"></i>
-        <input type="text" id="modalSearchInput" placeholder="🔍 ค้นหารหัส หรือ ชื่อสินค้า..." style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid #ccc; border-radius: 6px; font-size: 16px; outline: none;">
-    </div>
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; margin-top: 15px;">
-        <h3 style="margin: 0; font-size: 16px; color: #4b5563;"><i class="fas fa-list text-blue-500 mr-2"></i>รายการสินค้าในระบบ</h3>
-        <div style="display: flex; gap: 8px;">
-            <button onclick="exportProductsCSV()" style="background-color: #10b981; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <i class="fas fa-file-csv"></i> โหลด CSV
-            </button>
-            <button onclick="exportProductsPDF()" style="background-color: #ef4444; color: white; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: bold; display: flex; align-items: center; gap: 5px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-                <i class="fas fa-file-pdf"></i> โหลด PDF
-            </button>
-        </div>
-    </div>
-
-    <div class="table-container">
-      <table class="product-table">
-        <thead>
-          <tr>
-            <th>รหัส</th>
-            <th>ชื่อสินค้า</th>
-            <th>ราคาขาย (บาท)</th>
-            <th>จัดการ</th>
-          </tr>
-        </thead>
-        <tbody id="productTableBody">
-          </tbody>
-      </table>
-    </div>
-  </div>
-</div>
 
     <script src="script.js"></script>
 </body>
