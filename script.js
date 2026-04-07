@@ -505,21 +505,29 @@ function filterMenu(category) {
     else {
         grid.classList.remove('hidden'); noResults.classList.add('hidden');
         grid.innerHTML = filtered.map((item) => {
+            // ปุ่มแก้ไขสีเดิม
             const editBtnHtml = isCustomerMode ? '' : `<button onclick="handleEditClick('${item.id}', event)" class="absolute top-2 right-2 bg-white/80 hover:bg-white text-gray-400 hover:text-blue-500 w-8 h-8 rounded-full shadow-sm backdrop-blur-sm z-10 flex items-center justify-center transition-all duration-200"><i class="fas fa-pencil-alt text-xs"></i></button>`;
+            
             const imageUrl = getDriveUrl(item.image);
             const hasImage = imageUrl && imageUrl.length > 10;
-            let imageHtml = hasImage ? `<img src="${imageUrl}" class="w-full h-full object-contain p-2 transition duration-500 group-hover:scale-110" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"><div class="hidden w-full h-full bg-gray-50 flex flex-col items-center justify-center select-none text-blue-200"><i class="fas fa-box-open text-4xl mb-2 opacity-50"></i><div class="text-4xl">${getCategoryEmoji(item.category)}</div></div>` : `<div class="w-full h-full bg-gray-50 flex flex-col items-center justify-center select-none text-blue-200 group-hover:bg-blue-50 transition-colors"><i class="fas fa-box-open text-3xl sm:text-4xl mb-2 opacity-30 group-hover:opacity-50 transition-opacity"></i><div class="text-3xl sm:text-4xl filter drop-shadow-sm group-hover:scale-110 transition-transform duration-300">${getCategoryEmoji(item.category)}</div></div>`;
+            
+            // ไอคอนและพื้นหลังรูปภาพสีเดิม (เทาอ่อน/ขาว)
+            let imageHtml = hasImage 
+                ? `<img src="${imageUrl}" class="w-full h-full object-contain p-2 transition duration-500 group-hover:scale-110" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');"><div class="hidden w-full h-full bg-gray-50 flex flex-col items-center justify-center select-none text-blue-200"><i class="fas fa-box-open text-4xl mb-2 opacity-50"></i><div class="text-4xl">${getCategoryEmoji(item.category)}</div></div>` 
+                : `<div class="w-full h-full bg-gray-50 flex flex-col items-center justify-center select-none text-blue-200 group-hover:bg-blue-50 transition-colors"><i class="fas fa-box-open text-3xl sm:text-4xl mb-2 opacity-30 group-hover:opacity-50 transition-opacity"></i><div class="text-3xl sm:text-4xl filter drop-shadow-sm group-hover:scale-110 transition-transform duration-300">${getCategoryEmoji(item.category)}</div></div>`;
 
+            // นำ w-[85%] ออก เปลี่ยนเป็น w-full เพื่อให้กล่องชิดขอบ และกลับมาใช้สีขาว (bg-white)
             return `
-            <div class="bg-white rounded-3xl shadow-[0_2px_10px_rgba(0,0,0,0.03)] hover:shadow-[0_10px_25px_rgba(0,0,0,0.08)] transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100 group relative transform hover:-translate-y-1" onclick="handleAddToCart('${item.id}')">
+            <div class="w-full bg-white rounded-2xl shadow-sm hover:shadow-md transition-all duration-300 cursor-pointer overflow-hidden border border-gray-100 group relative transform hover:-translate-y-1 flex flex-col" onclick="handleAddToCart('${item.id}')">
                 ${editBtnHtml}
-                <div class="w-full aspect-[16/9] bg-white relative overflow-hidden flex items-center justify-center p-2">${imageHtml}</div>
-                <div class="p-4 pt-3 flex flex-col justify-between min-h-[110px]">
-                    <h3 class="font-bold text-gray-700 text-sm sm:text-base leading-snug line-clamp-2 mb-2 h-10 group-hover:text-blue-600 transition-colors">${item.name}</h3>
-                    <div class="flex justify-between items-end mt-1">
-                        <div class="flex flex-col"><span class="text-[10px] text-gray-400 font-bold uppercase tracking-wider mb-[-2px]">ราคา</span><div class="flex items-baseline gap-1"><span class="text-3xl font-extrabold text-gray-800 tracking-tight leading-none group-hover:text-blue-600 transition-colors">${item.price}</span><span class="text-xs text-gray-400 font-bold">฿</span></div></div>
-                        <div class="w-10 h-10 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-all shadow-sm group-hover:shadow-lg active:scale-90"><i class="fas fa-plus text-sm font-bold"></i></div>
-                    </div>
+                
+                <div class="w-full aspect-[2/1] sm:aspect-[16/7] bg-white relative overflow-hidden flex items-center justify-center p-1">
+                    ${imageHtml}
+                </div>
+                
+                <div class="px-3 py-2.5 flex justify-between items-center bg-gray-50 border-t border-gray-100 shrink-0">
+                    <h3 class="font-bold text-gray-700 text-xs sm:text-sm truncate group-hover:text-blue-600 transition-colors flex-1 pr-2" title="${item.name}">${item.name}</h3>
+                    <div class="text-blue-600 font-black text-sm sm:text-base whitespace-nowrap drop-shadow-sm">${item.price} ฿</div>
                 </div>
             </div>`;
         }).join('');
@@ -1693,10 +1701,10 @@ function importHistoryCSV(event) {
     reader.readAsText(file, 'UTF-8');
 }
 
-// ==========================================
-// 📈 DASHBOARD & ANALYTICS (อัปเดตสินค้าขายดีเดือนนี้)
-// ==========================================
 let mySalesChart = null; 
+let mySales7DaysChart = null; 
+let myTop3PieChart = null;
+let myTop5PieChart = null;
 
 async function openDashboardModal() {
     closeModal('exportModal');
@@ -1707,11 +1715,18 @@ async function openDashboardModal() {
     try {
         const history = await dbGetAll('history');
         
-        // จัดการเรื่องเวลา (Timezone)
+        const profitInput = document.getElementById('dashProfitInput');
+        const profitMarginVal = profitInput ? parseFloat(profitInput.value) || 12.5 : 12.5;
+        const profitPercent = profitMarginVal / 100;
+        
+        const label1 = document.getElementById('dashProfitLabel1');
+        const label2 = document.getElementById('dashProfitLabel2');
+        if(label1) label1.innerText = profitMarginVal;
+        if(label2) label2.innerText = profitMarginVal;
+
         const tzOffset = (new Date()).getTimezoneOffset() * 60000;
         const now = new Date(Date.now() - tzOffset);
         const todayStr = now.toISOString().split('T')[0];
-        
         const yesterday = new Date(now.getTime() - (24 * 60 * 60 * 1000));
         const yesterdayStr = yesterday.toISOString().split('T')[0];
 
@@ -1719,7 +1734,6 @@ async function openDashboardModal() {
         const currentMonth = now.getMonth(); 
         const thisMonthStr = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
         
-        // คำนวณเดือนที่แล้ว
         let lastMonth = currentMonth - 1;
         let lastMonthYear = currentYear;
         if (lastMonth < 0) { lastMonth = 11; lastMonthYear--; }
@@ -1727,27 +1741,27 @@ async function openDashboardModal() {
         
         const monthNames = ['มกราคม', 'กุมภาพันธ์', 'มีนาคม', 'เมษายน', 'พฤษภาคม', 'มิถุนายน', 'กรกฎาคม', 'สิงหาคม', 'กันยายน', 'ตุลาคม', 'พฤศจิกายน', 'ธันวาคม'];
         
-        // แสดงชื่อเดือนบนหน้าจอ
         document.getElementById('lastMonthNameLabel').innerText = monthNames[lastMonth];
         document.getElementById('thisMonthNameLabel').innerText = monthNames[currentMonth];
 
-        // ตัวแปรเก็บค่าสถิติ
-        let todaySales = 0, yesterdaySales = 0;
-        let todayBills = 0;
-        let lastMonthSales = 0;
-        
-        // ตัวแปรเก็บสินค้าขายดี
-        let itemCountsThisMonth = {}; // 🔴 เปลี่ยนมานับเฉพาะเดือนนี้
+        let todaySales = 0, yesterdaySales = 0, todayBills = 0, lastMonthSales = 0;
+        let itemCountsThisMonth = {}; 
         let itemCountsLastMonth = {};
-        
-        // ตัวแปรเก็บช่วงเวลาพีค
         let peakCountsAllTime = {}; 
         let peakCountsLastMonth = {};
+
+        const last7DaysData = [];
+        const last7DaysLabels = [];
+        for(let i=6; i>=0; i--) {
+            const d = new Date(now.getTime() - (i * 24 * 60 * 60 * 1000));
+            const dStr = d.toISOString().split('T')[0];
+            last7DaysLabels.push(d.toLocaleDateString('th-TH', { weekday: 'short', day: 'numeric', month: 'short' }));
+            last7DaysData.push({ dateStr: dStr, sales: 0, profit: 0 });
+        }
 
         const monthlySalesData = new Array(currentMonth + 1).fill(0);
         const monthlyProfitData = new Array(currentMonth + 1).fill(0);
 
-        // วิเคราะห์บิลทั้งหมด
         history.forEach(bill => {
             const billDateLocal = new Date(bill.date);
             const bDateStr = `${billDateLocal.getFullYear()}-${String(billDateLocal.getMonth() + 1).padStart(2, '0')}-${String(billDateLocal.getDate()).padStart(2, '0')}`;
@@ -1764,51 +1778,40 @@ async function openDashboardModal() {
             let items = [];
             try { items = typeof bill.items === 'string' ? JSON.parse(bill.items) : bill.items; } catch(e){}
 
-            // KPI วันนี้ และ เมื่อวาน
-            if (bDateStr === todayStr) {
-                todaySales += total;
-                todayBills++;
-            } else if (bDateStr === yesterdayStr) {
-                yesterdaySales += total;
+            if (bDateStr === todayStr) { todaySales += total; todayBills++; } 
+            else if (bDateStr === yesterdayStr) { yesterdaySales += total; }
+
+            const targetDay = last7DaysData.find(d => d.dateStr === bDateStr);
+            if(targetDay) {
+                targetDay.sales += total;
+                targetDay.profit += (total * profitPercent);
             }
 
-            // ข้อมูลสำหรับกราฟ
             if (bYear === currentYear && bMonth <= currentMonth) {
                 monthlySalesData[bMonth] += total;
-                monthlyProfitData[bMonth] += (total * 0.125); 
+                monthlyProfitData[bMonth] += (total * profitPercent); 
             }
 
-            // นับ Peak Hours รวมทุกวัน
             peakCountsAllTime[dayHourKey] = (peakCountsAllTime[dayHourKey] || 0) + 1;
 
-            // ===================================
-            // 🔴 วิเคราะห์ข้อมูล "เดือนที่แล้ว"
-            // ===================================
             if (yyyymm === lastMonthStr) {
                 lastMonthSales += total;
                 peakCountsLastMonth[dayHourKey] = (peakCountsLastMonth[dayHourKey] || 0) + 1;
-                
                 items.forEach(i => {
                     let itemName = i.name;
                     if (itemName === "สินค้าจากระบบเก่า" && bill.itemSummary) itemName = bill.itemSummary;
                     if (itemName === "สินค้าทั่วไป") return;
-                    
                     const qty = parseInt(i.qty || 1);
                     if (!itemCountsLastMonth[itemName]) itemCountsLastMonth[itemName] = 0;
                     itemCountsLastMonth[itemName] += qty;
                 });
             }
 
-            // ===================================
-            // 🔴 วิเคราะห์ข้อมูล "เดือนนี้"
-            // ===================================
             if (yyyymm === thisMonthStr) {
                 items.forEach(i => {
                     let itemName = i.name;
-                    // ดึงชื่อจริงจาก CSV มาแสดง
                     if (itemName === "สินค้าจากระบบเก่า" && bill.itemSummary) itemName = bill.itemSummary;
-                    if (itemName === "สินค้าทั่วไป") return; // ข้ามการคีย์มือราคาเปล่าๆ
-                    
+                    if (itemName === "สินค้าทั่วไป") return;
                     const qty = parseInt(i.qty || 1);
                     const revenue = parseFloat(i.price || 0) * qty;
                     if (!itemCountsThisMonth[itemName]) itemCountsThisMonth[itemName] = { qty: 0, rev: 0 };
@@ -1818,12 +1821,7 @@ async function openDashboardModal() {
             }
         });
 
-        // ---------------------------------------------------------
-        // การคำนวณและแสดงผล UI
-        // ---------------------------------------------------------
-
-        // 1. KPI วันนี้
-        const todayProfit = todaySales * 0.125;
+        const todayProfit = todaySales * profitPercent;
         document.getElementById('dashTodaySales').innerHTML = `${todaySales.toLocaleString()} <span class="text-lg">฿</span>`;
         document.getElementById('dashTodayProfit').innerHTML = `${todayProfit.toLocaleString()} <span class="text-lg">฿</span>`;
         document.getElementById('dashTodayBills').innerText = todayBills.toLocaleString();
@@ -1844,117 +1842,174 @@ async function openDashboardModal() {
             }
         }
 
-        // 2. KPI เดือนที่ผ่านมา
-        const lastMonthProfit = lastMonthSales * 0.125;
+        const lastMonthProfit = lastMonthSales * profitPercent;
         document.getElementById('dashLastMonthSales').innerHTML = `${lastMonthSales.toLocaleString()} <span class="text-lg">฿</span>`;
         document.getElementById('dashLastMonthProfit').innerHTML = `${lastMonthProfit.toLocaleString()} <span class="text-lg">฿</span>`;
 
-        // 3. Peak Hours และ สินค้าขายดี (เดือนที่แล้ว)
-        const daysShort = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
-        const peakLastMonthContainer = document.getElementById('dashLastMonthPeak');
-        const sortedLastMonthHours = Object.entries(peakCountsLastMonth).sort((a, b) => b[1] - a[1]).slice(0, 3);
-        
-        if (sortedLastMonthHours.length > 0) {
-            peakLastMonthContainer.innerHTML = sortedLastMonthHours.map(([key, count], idx) => {
-                const [d, h] = key.split('_');
-                let timeText = `${daysShort[d]} ${String(h).padStart(2, '0')}:00 - ${String(parseInt(h)+1).padStart(2, '0')}:00`;
-                return `<span class="bg-white text-indigo-700 text-[10px] sm:text-xs font-bold px-2 py-1.5 rounded border border-indigo-200 shadow-sm flex items-center gap-1.5 w-full">
-                            <span class="bg-indigo-500 text-white rounded-full w-4 h-4 flex shrink-0 items-center justify-center text-[10px] shadow-sm">${idx+1}</span> 
-                            <span class="truncate">${timeText}</span> 
-                            <span class="text-[10px] text-gray-400 font-normal ml-auto whitespace-nowrap">(${count} บิล)</span>
-                        </span>`;
-            }).join('');
-        } else {
-            peakLastMonthContainer.innerHTML = '<span class="text-xs text-indigo-400 bg-indigo-50 px-3 py-1 rounded">ไม่มีข้อมูลการขาย</span>';
-        }
+        // ---------------------------------------------------------
+        // กราฟ 1: แท่ง/เส้น ยอดขายและกำไร 7 วัน + เส้นค่าเฉลี่ย
+        // ---------------------------------------------------------
+        const ctx7 = document.getElementById('sales7DaysChart');
+        if(ctx7) {
+            if (mySales7DaysChart) mySales7DaysChart.destroy();
+            
+            // คำนวณค่าเฉลี่ย 7 วัน
+            const total7DaysSales = last7DaysData.reduce((sum, d) => sum + d.sales, 0);
+            const avg7DaysSales = total7DaysSales / 7;
+            const avg7DaysEl = document.getElementById('avg7Days');
+            if (avg7DaysEl) avg7DaysEl.innerText = `เฉลี่ย: ${avg7DaysSales.toLocaleString('th-TH', {maximumFractionDigits: 0})} ฿/วัน`;
 
-        const lastMonthTopItemsContainer = document.getElementById('dashLastMonthTopItems');
-        const sortedLastMonthItems = Object.entries(itemCountsLastMonth).sort((a, b) => b[1] - a[1]).slice(0, 3);
-        if (sortedLastMonthItems.length > 0) {
-            lastMonthTopItemsContainer.innerHTML = sortedLastMonthItems.map(([name, qty], idx) => {
-                return `<span class="bg-white text-indigo-700 text-[10px] sm:text-xs font-bold px-2 py-1.5 rounded border border-indigo-200 shadow-sm flex items-center gap-1.5 w-full">
-                            <span class="bg-indigo-500 text-white rounded-full w-4 h-4 flex shrink-0 items-center justify-center text-[10px] shadow-sm">${idx+1}</span> 
-                            <span class="truncate" title="${name}">${name}</span> 
-                            <span class="text-[10px] text-gray-400 font-normal ml-auto whitespace-nowrap">(${qty} ชิ้น)</span>
-                        </span>`;
-            }).join('');
-        } else {
-            lastMonthTopItemsContainer.innerHTML = '<span class="text-xs text-indigo-400 bg-indigo-50 px-3 py-1 rounded">ไม่มีข้อมูลสินค้า</span>';
-        }
-
-        // 4. วาดกราฟ
-        const ctx = document.getElementById('salesChart').getContext('2d');
-        if (mySalesChart) { mySalesChart.destroy(); }
-        
-        const chartLabels = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'].slice(0, currentMonth + 1);
-        
-        mySalesChart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: chartLabels,
-                datasets: [
-                    {
-                        label: 'ยอดขายรวม (บาท)',
-                        data: monthlySalesData,
-                        backgroundColor: 'rgba(59, 130, 246, 0.8)',
-                        borderRadius: 4,
-                        order: 2
-                    },
-                    {
-                        label: 'กำไร 12.5% (บาท)',
-                        data: monthlyProfitData,
-                        backgroundColor: 'rgba(34, 197, 94, 0.9)',
-                        type: 'line',
-                        borderColor: 'rgba(34, 197, 94, 1)',
-                        borderWidth: 2,
-                        tension: 0.3,
-                        pointBackgroundColor: 'white',
-                        order: 1
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { position: 'top', labels: { font: { family: 'Kanit' } } },
-                    tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' ฿'; } } }
+            mySales7DaysChart = new Chart(ctx7.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: last7DaysLabels,
+                    datasets: [
+                        {
+                            label: 'ยอดขายเฉลี่ย (บาท)',
+                            data: Array(7).fill(avg7DaysSales),
+                            type: 'line',
+                            borderColor: 'rgba(239, 68, 68, 0.6)', // สีแดงอ่อนๆ
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            order: 0
+                        },
+                        {
+                            label: 'ยอดขาย (บาท)',
+                            data: last7DaysData.map(d => d.sales),
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                            borderRadius: 4,
+                            order: 2
+                        },
+                        {
+                            label: `กำไรประเมิน ${profitMarginVal}% (บาท)`,
+                            data: last7DaysData.map(d => d.profit),
+                            backgroundColor: 'rgba(34, 197, 94, 0.9)',
+                            type: 'line',
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointBackgroundColor: 'white',
+                            order: 1
+                        }
+                    ]
                 },
-                scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return value.toLocaleString(); } } } }
-            }
-        });
-
-        // 5. 🔴 สินค้าทำเงิน (Top 5 ของเดือนนี้)
-        const topItemsThisMonth = Object.entries(itemCountsThisMonth)
-            .map(([name, data]) => ({ name, ...data }))
-            .sort((a, b) => b.rev - a.rev)
-            .slice(0, 5);
-
-        const topItemsContainer = document.getElementById('dashTopItems');
-        if (topItemsThisMonth.length > 0) {
-            let maxRev = topItemsThisMonth[0].rev;
-            topItemsContainer.innerHTML = topItemsThisMonth.map((item, index) => {
-                let rankClass = index === 0 ? 'bg-yellow-500 text-white' : (index === 1 ? 'bg-gray-400 text-white' : (index === 2 ? 'bg-yellow-700 text-white' : 'bg-gray-200 text-gray-500'));
-                return `
-                <div class="animate-slide-up" style="animation-delay: ${index * 0.1}s">
-                    <div class="flex justify-between items-end mb-1">
-                        <span class="text-sm font-bold text-gray-700 truncate pr-2 flex items-center" title="${item.name}">
-                            <span class="${rankClass} w-5 h-5 rounded-full flex shrink-0 items-center justify-center text-[10px] mr-2 shadow-sm">${index+1}</span>
-                            <span class="truncate">${item.name}</span>
-                            <span class="text-[10px] text-gray-400 font-normal ml-2 shrink-0">(${item.qty} ชิ้น)</span>
-                        </span>
-                        <span class="text-blue-600 font-bold text-sm bg-blue-50 px-2 py-0.5 rounded shrink-0">${item.rev.toLocaleString()} ฿</span>
-                    </div>
-                    <div class="w-full bg-gray-100 rounded-full h-2 shadow-inner">
-                        <div class="bg-gradient-to-r from-blue-400 to-blue-500 h-2 rounded-full transition-all duration-1000 ease-out" style="width: 0%;" data-target-width="${(item.rev / maxRev) * 100}%"></div>
-                    </div>
-                </div>`;
-            }).join('');
-        } else {
-            topItemsContainer.innerHTML = '<p class="text-center text-gray-400 py-4 text-sm">ยังไม่มีข้อมูลการขายในเดือนนี้</p>';
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { labels: { font: { family: 'Kanit' } } } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
         }
 
-        // 6. Peak Hours (All-time)
+        // ---------------------------------------------------------
+        // กราฟ 2: แท่ง/เส้น รายเดือน (ม.ค.) + เส้นค่าเฉลี่ย
+        // ---------------------------------------------------------
+        const ctxSales = document.getElementById('salesChart');
+        if (ctxSales) {
+            if (mySalesChart) mySalesChart.destroy();
+            const chartLabels = ['ม.ค.', 'ก.พ.', 'มี.ค.', 'เม.ย.', 'พ.ค.', 'มิ.ย.', 'ก.ค.', 'ส.ค.', 'ก.ย.', 'ต.ค.', 'พ.ย.', 'ธ.ค.'].slice(0, currentMonth + 1);
+            
+            // คำนวณค่าเฉลี่ยรายเดือน
+            const monthsCount = currentMonth + 1;
+            const totalMonthlySales = monthlySalesData.reduce((sum, val) => sum + val, 0);
+            const avgMonthlySales = totalMonthlySales / monthsCount;
+            const avgMonthlyEl = document.getElementById('avgMonthly');
+            if (avgMonthlyEl) avgMonthlyEl.innerText = `เฉลี่ย: ${avgMonthlySales.toLocaleString('th-TH', {maximumFractionDigits: 0})} ฿/เดือน`;
+
+            mySalesChart = new Chart(ctxSales.getContext('2d'), {
+                type: 'bar',
+                data: {
+                    labels: chartLabels,
+                    datasets: [
+                        {
+                            label: 'ยอดขายเฉลี่ย (บาท)',
+                            data: Array(monthsCount).fill(avgMonthlySales),
+                            type: 'line',
+                            borderColor: 'rgba(239, 68, 68, 0.6)', // สีแดงอ่อนๆ
+                            borderWidth: 2,
+                            borderDash: [5, 5],
+                            pointRadius: 0,
+                            order: 0
+                        },
+                        {
+                            label: 'ยอดขายรวม (บาท)',
+                            data: monthlySalesData,
+                            backgroundColor: 'rgba(59, 130, 246, 0.8)',
+                            borderRadius: 4,
+                            order: 2
+                        },
+                        {
+                            label: `กำไรประเมิน ${profitMarginVal}% (บาท)`,
+                            data: monthlyProfitData,
+                            backgroundColor: 'rgba(34, 197, 94, 0.9)',
+                            type: 'line',
+                            borderColor: 'rgba(34, 197, 94, 1)',
+                            borderWidth: 2,
+                            tension: 0.3,
+                            pointBackgroundColor: 'white',
+                            order: 1
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: {
+                        legend: { position: 'top', labels: { font: { family: 'Kanit' } } },
+                        tooltip: { callbacks: { label: function(context) { return context.dataset.label + ': ' + context.parsed.y.toLocaleString() + ' ฿'; } } }
+                    },
+                    scales: { y: { beginAtZero: true, ticks: { callback: function(value) { return value.toLocaleString(); } } } }
+                }
+            });
+        }
+
+        // ---------------------------------------------------------
+        // กราฟ 3: พาย (กลม) Top 3 สินค้าขายดี (เดือนที่แล้ว)
+        // ---------------------------------------------------------
+        const sortedLastMonthItems = Object.entries(itemCountsLastMonth).sort((a, b) => b[1] - a[1]).slice(0, 3);
+        const ctxTop3 = document.getElementById('top3PieChart');
+        if (ctxTop3 && sortedLastMonthItems.length > 0) {
+            if (myTop3PieChart) myTop3PieChart.destroy();
+            myTop3PieChart = new Chart(ctxTop3.getContext('2d'), {
+                type: 'pie',
+                data: {
+                    labels: sortedLastMonthItems.map(item => item[0]),
+                    datasets: [{
+                        data: sortedLastMonthItems.map(item => item[1]),
+                        backgroundColor: ['#3b82f6', '#f59e0b', '#10b981']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: 'Kanit', size: 10 } } } } }
+            });
+        } else if(document.getElementById('dashLastMonthTopItems_container')) {
+            document.getElementById('dashLastMonthTopItems_container').innerHTML = '<span class="text-xs text-indigo-400 bg-indigo-50 px-3 py-1 rounded">ไม่มีข้อมูลสินค้า</span>';
+        }
+
+        // ---------------------------------------------------------
+        // กราฟ 4: โดนัท Top 5 สินค้าทำเงิน (เดือนนี้)
+        // ---------------------------------------------------------
+        const topItemsThisMonth = Object.entries(itemCountsThisMonth).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.rev - a.rev).slice(0, 5);
+        const ctxTop5 = document.getElementById('top5PieChart');
+        if (ctxTop5 && topItemsThisMonth.length > 0) {
+            if (myTop5PieChart) myTop5PieChart.destroy();
+            myTop5PieChart = new Chart(ctxTop5.getContext('2d'), {
+                type: 'doughnut',
+                data: {
+                    labels: topItemsThisMonth.map(item => item.name),
+                    datasets: [{
+                        data: topItemsThisMonth.map(item => item.rev),
+                        backgroundColor: ['#ef4444', '#f97316', '#eab308', '#22c55e', '#3b82f6']
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: 'Kanit' } } }, tooltip: { callbacks: { label: function(context) { return context.label + ': ' + context.parsed.toLocaleString() + ' ฿'; } } } } }
+            });
+        } else if(document.getElementById('dashTopItems_container')) {
+            document.getElementById('dashTopItems_container').innerHTML = '<p class="text-center text-gray-400 py-4 text-sm">ยังไม่มีข้อมูลการขายในเดือนนี้</p>';
+        }
+
+        // ---------------------------------------------------------
+        // Peak Hours 
+        // ---------------------------------------------------------
         const daysFull = ['อาทิตย์', 'จันทร์', 'อังคาร', 'พุธ', 'พฤหัสบดี', 'ศุกร์', 'เสาร์'];
         const peakContainer = document.getElementById('dashPeakHours');
         const sortedAllTimePeak = Object.entries(peakCountsAllTime).sort((a, b) => b[1] - a[1]).slice(0, 3);
@@ -1964,25 +2019,12 @@ async function openDashboardModal() {
                 const [d, h] = key.split('_');
                 let timeText = `วัน${daysFull[d]} ${String(h).padStart(2, '0')}:00 - ${String(parseInt(h)+1).padStart(2, '0')}:00`;
                 let rankColor = idx === 0 ? 'bg-red-500' : (idx === 1 ? 'bg-orange-500' : 'bg-blue-500');
-                return `
-                <div class="flex justify-between items-center bg-gray-50 border border-gray-100 p-2.5 rounded-xl">
-                    <div class="font-bold text-gray-700 text-sm flex items-center gap-2">
-                        <span class="${rankColor} text-white w-6 h-6 rounded-full flex shrink-0 items-center justify-center text-xs shadow-sm">${idx + 1}</span>
-                        <span class="truncate">${timeText}</span>
-                    </div>
-                    <div class="bg-white px-3 py-1 rounded shadow-sm text-xs font-bold text-blue-600 border border-blue-100 shrink-0">${count} บิล</div>
-                </div>`;
+                return `<div class="flex justify-between items-center bg-gray-50 border border-gray-100 p-2.5 rounded-xl"><div class="font-bold text-gray-700 text-sm flex items-center gap-2"><span class="${rankColor} text-white w-6 h-6 rounded-full flex shrink-0 items-center justify-center text-xs shadow-sm">${idx + 1}</span><span class="truncate">${timeText}</span></div><div class="bg-white px-3 py-1 rounded shadow-sm text-xs font-bold text-blue-600 border border-blue-100 shrink-0">${count} บิล</div></div>`;
             }).join('');
         } else {
             peakContainer.innerHTML = '<p class="text-center text-gray-400 py-4 text-sm">ยังไม่มีบิลในระบบ</p>';
         }
 
-        // Animate แท่งกราฟ
-        setTimeout(() => {
-            document.querySelectorAll('#dashTopItems .rounded-full > div').forEach(bar => { bar.style.width = bar.getAttribute('data-target-width'); });
-        }, 100);
-
-        // ปิดหน้าจอโหลด
         setTimeout(() => {
             document.getElementById('dashLoading').classList.add('hidden');
             document.getElementById('dashContent').classList.remove('hidden');
