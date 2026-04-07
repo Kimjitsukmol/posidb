@@ -379,75 +379,100 @@
                 </div>
 
                 <div id="dashContent" class="hidden space-y-6">
-                    
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-                            <h4 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3 border-b pb-2"><i class="fas fa-calendar-day mr-1 text-blue-500"></i> สรุปวันนี้</h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <p class="text-[10px] sm:text-xs font-bold text-gray-400">ยอดขายวันนี้</p>
-                                    <h3 class="text-2xl sm:text-3xl font-black text-blue-600 leading-tight" id="dashTodaySales">0</h3>
-                                    <p class="text-[10px] font-bold mt-1" id="dashGrowth"><span class="text-gray-400">เทียบเมื่อวาน 0%</span></p>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] sm:text-xs font-bold text-gray-400">กำไร 12.5% (วันนี้)</p>
-                                    <h3 class="text-2xl sm:text-3xl font-black text-green-500 leading-tight" id="dashTodayProfit">0</h3>
-                                    <p class="text-[10px] text-gray-400 font-bold mt-1">จำนวนบิล: <span id="dashTodayBills" class="text-gray-600">0</span></p>
-                                </div>
-                            </div>
-                        </div>
+    
+    <div class="flex justify-between items-center bg-white p-4 rounded-2xl border border-gray-200 shadow-sm">
+        <span class="font-bold text-gray-700"><i class="fas fa-cog text-blue-500 mr-2"></i> ตั้งค่าเปอร์เซ็นต์กำไรประเมิน:</span>
+        <div class="flex items-center gap-2">
+            <input type="number" id="dashProfitInput" value="12.5" step="0.1" class="border-2 border-blue-200 rounded-lg p-2 focus:border-blue-500 outline-none w-24 text-center font-bold text-blue-600 bg-blue-50" onchange="openDashboardModal()">
+            <span class="font-bold text-gray-500">%</span>
+        </div>
+    </div>
 
-                        <div class="bg-gradient-to-br from-indigo-50 to-blue-50 p-5 rounded-2xl border border-indigo-100 shadow-sm relative overflow-hidden">
-                            <div class="absolute -right-4 -bottom-4 opacity-5"><i class="fas fa-calendar-alt text-8xl text-indigo-900"></i></div>
-                            <h4 class="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-3 border-b border-indigo-200 pb-2 relative z-10"><i class="fas fa-history mr-1"></i> สรุปเดือนที่ผ่านมา (<span id="lastMonthNameLabel">...</span>)</h4>
-                            <div class="grid grid-cols-2 gap-4 relative z-10">
-                                <div>
-                                    <p class="text-[10px] sm:text-xs font-bold text-indigo-400">ยอดขายทั้งเดือน</p>
-                                    <h3 class="text-2xl sm:text-3xl font-black text-indigo-700 leading-tight" id="dashLastMonthSales">0</h3>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] sm:text-xs font-bold text-indigo-400">กำไร 12.5% (ทั้งเดือน)</p>
-                                    <h3 class="text-2xl sm:text-3xl font-black text-green-600 leading-tight" id="dashLastMonthProfit">0</h3>
-                                </div>
-                                
-                                <div class="col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-                                    <div>
-                                        <p class="text-[10px] sm:text-xs font-bold text-indigo-400 mb-2">ช่วงเวลาลูกค้าเยอะสุด (Top 3)</p>
-                                        <div id="dashLastMonthPeak" class="flex flex-col gap-2"></div>
-                                    </div>
-                                    <div>
-                                        <p class="text-[10px] sm:text-xs font-bold text-indigo-400 mb-2">สินค้าขายดี (Top 3)</p>
-                                        <div id="dashLastMonthTopItems" class="flex flex-col gap-2"></div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-                        <h4 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2"><i class="fas fa-chart-bar text-blue-500 mr-2"></i> กราฟยอดขายและกำไร ปีนี้ (ตั้งแต่ ม.ค.)</h4>
-                        <div class="relative w-full h-[250px] sm:h-[300px]">
-                            <canvas id="salesChart"></canvas>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-                            <h4 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2 flex justify-between items-center">
-                                <span><i class="fas fa-trophy text-yellow-500 mr-2"></i> 5 สินค้าทำเงินสูงสุด (<span id="thisMonthNameLabel">เดือนนี้</span>)</span>
-                            </h4>
-                            <div id="dashTopItems" class="space-y-4"></div>
-                        </div>
-
-                        <div class="space-y-4">
-                            <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-                                <h4 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2"><i class="fas fa-clock text-blue-500 mr-2"></i> ช่วงเวลาลูกค้าเยอะสุด (วิเคราะห์จากวัน จ.-อา.)</h4>
-                                <div id="dashPeakHours" class="flex flex-col gap-3"></div>
-                            </div>
-                        </div>
-                    </div>
-
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+            <h4 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3 border-b pb-2"><i class="fas fa-calendar-day mr-1 text-blue-500"></i> สรุปวันนี้</h4>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-[10px] sm:text-xs font-bold text-gray-400">ยอดขายวันนี้</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-blue-600 leading-tight" id="dashTodaySales">0</h3>
+                    <p class="text-[10px] font-bold mt-1" id="dashGrowth"><span class="text-gray-400">เทียบเมื่อวาน 0%</span></p>
                 </div>
+                <div>
+                    <p class="text-[10px] sm:text-xs font-bold text-gray-400">กำไร <span id="dashProfitLabel1">12.5</span>% (วันนี้)</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-green-500 leading-tight" id="dashTodayProfit">0</h3>
+                    <p class="text-[10px] text-gray-400 font-bold mt-1">จำนวนบิล: <span id="dashTodayBills" class="text-gray-600">0</span></p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-gradient-to-br from-indigo-50 to-blue-50 p-5 rounded-2xl border border-indigo-100 shadow-sm relative overflow-hidden">
+            <div class="absolute -right-4 -bottom-4 opacity-5"><i class="fas fa-calendar-alt text-8xl text-indigo-900"></i></div>
+            <h4 class="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-3 border-b border-indigo-200 pb-2 relative z-10"><i class="fas fa-history mr-1"></i> สรุปเดือนที่ผ่านมา (<span id="lastMonthNameLabel">...</span>)</h4>
+            <div class="grid grid-cols-2 gap-4 relative z-10">
+                <div>
+                    <p class="text-[10px] sm:text-xs font-bold text-indigo-400">ยอดขายทั้งเดือน</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-indigo-700 leading-tight" id="dashLastMonthSales">0</h3>
+                </div>
+                <div>
+                    <p class="text-[10px] sm:text-xs font-bold text-indigo-400">กำไร <span id="dashProfitLabel2">12.5</span>% (ทั้งเดือน)</p>
+                    <h3 class="text-2xl sm:text-3xl font-black text-green-600 leading-tight" id="dashLastMonthProfit">0</h3>
+                </div>
+                
+                <div class="col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                    <div>
+                        <p class="text-[10px] sm:text-xs font-bold text-indigo-400 mb-2">ช่วงเวลาลูกค้าเยอะสุด (Top 3)</p>
+                        <div id="dashLastMonthPeak" class="flex flex-col gap-2"></div>
+                    </div>
+                    <div id="dashLastMonthTopItems_container">
+                        <p class="text-[10px] sm:text-xs font-bold text-indigo-400 mb-2">สินค้าขายดี (Top 3)</p>
+                        <div class="relative w-full h-[120px]">
+                            <canvas id="top3PieChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+        <h4 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <span><i class="fas fa-chart-bar text-blue-500 mr-2"></i> กราฟยอดขายและกำไร (ย้อนหลัง 7 วัน)</span>
+            <span id="avg7Days" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded border border-blue-100 shadow-sm">เฉลี่ย: 0 ฿/วัน</span>
+        </h4>
+        <div class="relative w-full h-[250px] sm:h-[300px]">
+            <canvas id="sales7DaysChart"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+        <h4 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+            <span><i class="fas fa-chart-line text-blue-500 mr-2"></i> กราฟยอดขายและกำไร ปีนี้ (ตั้งแต่ ม.ค.)</span>
+            <span id="avgMonthly" class="text-xs font-bold text-blue-600 bg-blue-50 px-3 py-1 rounded border border-blue-100 shadow-sm">เฉลี่ย: 0 ฿/เดือน</span>
+        </h4>
+        <div class="relative w-full h-[250px] sm:h-[300px]">
+            <canvas id="salesChart"></canvas>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+            <h4 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2 flex justify-between items-center">
+                <span><i class="fas fa-trophy text-yellow-500 mr-2"></i> 5 สินค้าทำเงินสูงสุด (<span id="thisMonthNameLabel">เดือนนี้</span>)</span>
+            </h4>
+            <div id="dashTopItems_container" class="relative w-full h-[250px]">
+                <canvas id="top5PieChart"></canvas>
+            </div>
+        </div>
+
+        <div class="space-y-4">
+            <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                <h4 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2"><i class="fas fa-clock text-blue-500 mr-2"></i> ช่วงเวลาลูกค้าเยอะสุด (วิเคราะห์จากวัน จ.-อา.)</h4>
+                <div id="dashPeakHours" class="flex flex-col gap-3"></div>
+            </div>
+        </div>
+    </div>
+
+</div>
             </div>
         </div>
     </div>
