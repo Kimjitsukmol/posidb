@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>POS By Ice</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body class="bg-gray-100 h-[100dvh] flex flex-col overflow-hidden text-gray-800">
+
+    <div id="customerIdentityModal" class="fixed inset-0 z-[200] bg-gray-900 flex items-center justify-center p-4 hidden animate-fade-in bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]"><div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-pop relative"><div class="bg-gradient-to-r from-blue-500 to-blue-400 h-32 flex items-center justify-center relative overflow-hidden"><div class="absolute inset-0 bg-white/10 opacity-50"></div><div class="w-20 h-20 bg-white text-blue-500 rounded-full flex items-center justify-center shadow-lg text-3xl animate-bounce"><i class="fas fa-user-edit"></i></div></div><div class="p-8"><h2 class="text-2xl font-extrabold text-center text-gray-800 mb-2">ยินดีต้อนรับครับ</h2><p class="text-center text-gray-500 mb-6 text-sm">กรุณาระบุตัวตนเพื่อให้ทางร้าน<br>ติดต่อกลับกรณีสินค้าหมดหรือจัดส่งนะคะ</p><form id="customerIdentityForm" class="space-y-4"><div><label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">ชื่อเล่น / ชื่อของคุณ</label><input type="text" id="custIdName" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-blue-500 outline-none font-bold text-lg bg-gray-50" placeholder="เช่น พี่หนุ่ม, น้องพลอย" required></div><div><label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">เบอร์โทรศัพท์ (สำหรับติดต่อ)</label><input type="tel" id="custIdPhone" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-blue-500 outline-none font-bold text-lg bg-gray-50 tracking-wider" placeholder="08X-XXX-XXXX" required minlength="9" maxlength="10"></div><div class="flex gap-4"><div class="flex-1"><label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">บ้านเลขที่ *</label><input type="text" id="custIdHouseNo" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-blue-500 outline-none font-bold text-lg bg-gray-50" placeholder="เช่น 99/9" required></div><div class="flex-1"><label class="block text-xs font-bold text-gray-500 uppercase mb-1 ml-1">ซอย/ถนน *</label><input type="text" id="custIdSoi" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-blue-500 outline-none font-bold text-lg bg-gray-50" placeholder="ซ. 15, ถ.หลัก" required></div></div><button type="submit" class="w-full bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white font-bold py-4 rounded-xl shadow-lg transition transform active:scale-95 text-lg mt-4">เริ่มสั่งอาหาร <i class="fas fa-arrow-right ml-2"></i></button></form></div></div></div>
+
+    <nav class="bg-gradient-to-r from-blue-500 to-blue-400 text-white p-2 shadow-lg flex justify-between items-center z-30 shrink-0 gap-2">
+        <div class="flex items-center gap-3 overflow-hidden shrink-0">
+            <div class="bg-white text-blue-500 rounded-full w-10 h-10 flex items-center justify-center font-bold shadow-md shrink-0 text-xl">🏪</div>
+            <div class="flex flex-col justify-center">
+                <span class="text-xs sm:text-sm font-normal text-blue-100 opacity-90 leading-none mb-1 tracking-wide">ร้านเจ้พิน</span>
+                <span id="dateTimeDisplay" class="text-2xl sm:text-3xl font-medium text-white drop-shadow-sm leading-none tracking-tight">...</span>
+            </div>
+        </div>
+        
+        <div id="adminToolbar" class="flex gap-2 overflow-x-auto hide-scrollbar smooth-scroll items-center min-w-0 ml-auto">
+            
+            <button onclick="openSalesModal()" class="bg-gradient-to-r from-blue-400 to-blue-500 hover:from-blue-500 hover:to-blue-600 text-white px-3 py-1.5 rounded-lg text-sm transition border border-blue-600 shrink-0 font-bold shadow-md flex items-center gap-1"><i class="fas fa-chart-line"></i> <span class="hidden sm:inline">ยอดขาย</span></button>
+            <button onclick="openHistoryModal()" class="bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white px-3 py-1.5 rounded-lg text-sm transition border border-indigo-700 shrink-0 font-bold shadow-md flex items-center gap-1"><i class="fas fa-history"></i> <span class="hidden sm:inline">บิล</span></button>
+            <button onclick="openExportModal()" class="bg-blue-600 hover:bg-blue-500 text-white px-3 py-1.5 rounded-lg text-sm shadow-lg font-bold whitespace-nowrap shrink-0 border border-blue-700 mr-2"><i class="fas fa-database"></i> <span class="hidden sm:inline">จัดการ</span></button>
+
+            <button onclick="openAddMenuModal()" class="bg-green-500 hover:bg-green-400 text-white px-3 py-1.5 rounded-lg text-sm shadow-lg font-bold whitespace-nowrap shrink-0 border border-green-600"><i class="fas fa-plus"></i> <span class="hidden sm:inline">สินค้า</span></button>
+        </div>
+
+        <div id="customerToolbar" class="hidden flex items-center justify-end gap-2 flex-1">
+             <button onclick="openMyRecentOrder()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-full text-xs font-bold shadow-sm flex items-center gap-1 border border-white/30 active:scale-95 transition"><i class="fas fa-receipt"></i></button>
+            <div class="bg-yellow-100 text-blue-600 px-3 py-1 rounded-full text-xs font-bold shadow-sm flex items-center gap-1 animate-pulse"><i class="fas fa-clock"></i><span id="queueCountDisplay">0</span> คิว</div>
+            <span class="bg-white/20 px-3 py-1 rounded-full text-sm font-bold text-white"><i class="fas fa-user mr-1"></i> <span id="customerTableDisplay">...</span></span>
+        </div>
+    </nav>
+
+    <div class="flex flex-1 overflow-hidden relative">
+        
+        <div id="leftPanel" class="flex-1 flex flex-col bg-gray-100 h-full min-w-0 transition-all duration-300">
+            <div class="bg-white p-3 shadow-sm z-20 border-b border-gray-200">
+                <div class="relative flex gap-2">
+                    <div class="relative flex-1">
+                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <i id="topSearchIcon" class="fas fa-barcode text-gray-400"></i>
+                        </div>
+                        
+                        <input type="text" id="searchInput" inputmode="none" 
+                               oninput="this.value = this.value.replace(/[.+]/g, '')" 
+                               onkeyup="searchMenu()" 
+                               onkeydown="handleSearchKeydown(event)" 
+                               class="block w-full pl-10 pr-10 py-2.5 border border-gray-200 rounded-xl leading-5 bg-gray-50 text-gray-900 placeholder-gray-400 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-1 focus:ring-blue-500 sm:text-sm transition shadow-inner" 
+                               placeholder="ยิงบาร์โค้ด...">
+                               
+                        <div class="absolute inset-y-0 right-0 pr-2 flex items-center">
+                            <button onclick="clearSearch()" class="text-gray-400 hover:text-gray-600 p-1 hidden" id="clearSearchBtn"><i class="fas fa-times-circle"></i></button>
+                        </div>
+                    </div>
+
+                    <button onclick="toggleSystemKeyboard()" id="btnToggleKey" class="bg-white border border-gray-200 text-gray-400 hover:text-blue-500 hover:border-blue-300 w-12 rounded-xl flex items-center justify-center shadow-sm transition">
+                        <i class="fas fa-keyboard"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-2 bg-white shadow-sm border-b border-gray-200 flex gap-2 overflow-x-auto whitespace-nowrap z-10 shrink-0 smooth-scroll hide-scrollbar" id="categoryBar"></div>
+
+            <div class="flex-1 overflow-y-auto p-4 pb-24 lg:pb-4 relative custom-scrollbar bg-gray-100" id="menuContainer">
+                <div id="loadingMenu" class="absolute inset-0 flex flex-col items-center justify-center bg-white/80 z-20 backdrop-blur-sm hidden"><i class="fas fa-circle-notch fa-spin text-4xl text-blue-500 mb-3"></i><p class="text-gray-500 font-medium animate-pulse">กำลังโหลดข้อมูลสินค้า...</p></div>
+                <div id="menuGrid" class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 lg:gap-4 content-start"></div>
+                
+                <div id="noResults" class="hidden flex flex-col items-center justify-center py-10 text-gray-400 text-center">
+                    <i class="fas fa-box-open text-6xl mb-4 text-gray-300"></i>
+                    <p class="mb-2">ไม่พบสินค้า</p>
+                    <button onclick="fetchMenu()" class="bg-blue-100 text-blue-600 px-4 py-2 rounded-lg text-sm font-bold hover:bg-blue-200 transition">
+                        <i class="fas fa-sync-alt mr-1"></i> โหลดข้อมูลใหม่
+                    </button>
+                </div>
+            </div>
+
+            <div id="floatingSearchContainer" class="absolute bottom-6 left-4 z-30 animate-slide-up group" onclick="document.getElementById('floatingSearchInput').focus()">
+                <div class="h-12 w-12 group-focus-within:w-48 sm:group-focus-within:w-64 bg-white/90 backdrop-blur-md border border-blue-200 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.12)] flex items-center px-0 group-focus-within:px-4 ring-1 ring-black/5 group-focus-within:ring-2 group-focus-within:ring-blue-500 transition-all duration-300 ease-in-out cursor-pointer overflow-hidden">
+                    
+                    <div class="w-12 h-12 flex items-center justify-center shrink-0 group-focus-within:w-auto group-focus-within:h-auto group-focus-within:mr-2 transition-all duration-300">
+                        <i class="fas fa-search text-blue-500 text-lg group-focus-within:text-sm transition-all duration-300"></i>
+                    </div>
+                    
+                    <input type="text" id="floatingSearchInput" onkeyup="syncSearch(this.value)" placeholder="ค้นหาสินค้า..." class="bg-transparent border-none outline-none text-sm font-bold text-gray-700 placeholder-gray-400 h-5 w-0 opacity-0 group-focus-within:w-full group-focus-within:opacity-100 transition-all duration-300 cursor-pointer group-focus-within:cursor-text" autocomplete="off">
+                    
+                    <button onclick="clearFloatingSearch(); event.stopPropagation();" id="btnClearFloat" class="text-gray-300 hover:text-red-500 ml-1 hidden transition shrink-0"><i class="fas fa-times-circle"></i></button>
+                    
+                </div>
+</div>
+        </div>
+
+        <div id="cartPanel" class="hidden md:flex flex-col w-full md:w-[340px] lg:w-[400px] bg-white shadow-2xl border-l border-gray-200 z-40 md:z-[101] fixed inset-0 md:relative md:h-auto animate-slide-up md:animate-none">
+            
+            <div class="lg:hidden bg-gradient-to-r from-blue-500 to-blue-400 text-white p-4 flex justify-between items-center shadow-md shrink-0">
+                <h2 class="text-xl font-bold"><i class="fas fa-shopping-cart mr-2"></i>ตะกร้าสินค้า</h2>
+                <button onclick="toggleCart(false)" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8 flex items-center justify-center"><i class="fas fa-chevron-down"></i></button>
+            </div>
+            
+            <div class="hidden md:flex flex-col bg-blue-50 border-b border-blue-100 shrink-0 relative overflow-hidden transition-all duration-500" id="cartHeaderArea">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-blue-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-pulse"></div>
+                
+                <div class="p-4 pb-2 flex items-center justify-between relative z-10">
+                     <div class="flex flex-col justify-center">
+                        <h2 class="text-lg font-bold text-blue-800 flex items-center gap-2"><i class="fas fa-shopping-cart"></i> รายการขาย</h2>
+                        <span id="cartCountDesktop" class="bg-blue-200 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full w-fit mt-1">0 รายการ</span>
+                     </div>
+                     
+                     <div class="text-right flex flex-col items-end transition-all duration-500" id="priceDisplayBox">
+                        <span class="block text-7xl font-extrabold text-blue-600 tracking-tighter leading-none drop-shadow-md filter transition-all duration-500 origin-right" id="totalPrice"></span>
+                        <div id="changeWrapper" class="hidden opacity-0 transform translate-y-4 transition-all duration-500 mt-1">
+                            <span class="text-gray-500 text-xs font-bold mr-2">เงินทอน</span>
+                            <span id="mainScreenChange" class="text-8xl font-extrabold text-green-600 drop-shadow-sm">0 ฿</span>
+                        </div>
+                     </div>
+                </div>
+                
+                <div id="holdBillContainer" class="flex gap-2 px-4 pb-3 relative z-10">
+                    <button onclick="holdBill()" class="flex-1 bg-white text-blue-600 border border-blue-200 hover:bg-blue-100 text-xs font-bold py-1.5 rounded-lg transition shadow-sm transform active:scale-95"><i class="fas fa-pause mr-1"></i> พักบิล</button>
+                    <button onclick="openRecallModal()" class="flex-1 bg-white text-blue-600 border border-blue-200 hover:bg-blue-100 text-xs font-bold py-1.5 rounded-lg transition shadow-sm transform active:scale-95"><i class="fas fa-history mr-1"></i> เรียกบิล</button>
+                </div>
+            </div>
+
+            <div id="cartItems" class="flex-1 overflow-y-auto p-4 space-y-3 bg-white">
+                <div class="h-full flex flex-col items-center justify-center text-gray-400 opacity-60">
+                    <i class="fas fa-cash-register text-6xl mb-4"></i>
+                    <p>สแกนหรือเลือกสินค้า</p>
+                </div>
+            </div>
+
+            <div class="p-4 bg-white border-t border-gray-200 shadow-[0_-5px_15px_rgba(0,0,0,0.05)] shrink-0 pb-safe md:hidden">
+                <button onclick="handleCheckoutClick()" id="btnOrderMobile" class="w-full bg-gradient-to-r from-blue-500 to-blue-400 hover:from-blue-600 hover:to-blue-500 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-blue-200 text-lg transition transform active:scale-95 flex justify-center items-center gap-2">
+                    <span>คิดเงิน</span> <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <div id="embeddedNumpadPanel" class="hidden md:flex flex-col bg-gray-50 border-t border-gray-300 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] shrink-0 transition-all duration-300 ease-in-out relative z-[200]">
+                <div onclick="toggleEmbeddedNumpad()" class="h-6 flex items-center justify-center cursor-pointer hover:bg-blue-50 transition-colors group border-b border-gray-200 bg-white rounded-t-xl mx-2 -mt-3 shadow-sm relative z-10">
+                    <div class="flex gap-1 group-hover:gap-1.5 transition-all duration-300">
+                        <div class="w-1.5 h-1.5 bg-gray-300 rounded-full group-hover:bg-blue-400"></div>
+                        <div class="w-1.5 h-1.5 bg-gray-300 rounded-full group-hover:bg-blue-400"></div>
+                        <div class="w-1.5 h-1.5 bg-gray-300 rounded-full group-hover:bg-blue-400"></div>
+                    </div>
+                </div>
+
+                <div id="embeddedKeys" class="grid grid-cols-4 gap-2 p-3 pb-4 hidden">
+                    <button onclick="numpadPress('7', this)" class="h-12 bg-white border border-gray-200 shadow-sm rounded-lg font-bold text-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition active:scale-95">7</button>
+                    <button onclick="numpadPress('8', this)" class="h-12 bg-white border border-gray-200 shadow-sm rounded-lg font-bold text-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition active:scale-95">8</button>
+                    <button onclick="numpadPress('9', this)" class="h-12 bg-white border border-gray-200 shadow-sm rounded-lg font-bold text-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition active:scale-95">9</button>
+                    <button onclick="numpadAction('del')" class="h-12 bg-red-50 border border-red-100 shadow-sm rounded-lg text-red-500 hover:bg-red-100 transition active:scale-95"><i class="fas fa-backspace"></i></button>
+
+                    <button onclick="numpadPress('4', this)" class="h-12 bg-white border border-gray-200 shadow-sm rounded-lg font-bold text-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition active:scale-95">4</button>
+                    <button onclick="numpadPress('5', this)" class="h-12 bg-white border border-gray-200 shadow-sm rounded-lg font-bold text-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition active:scale-95">5</button>
+                    <button onclick="numpadPress('6', this)" class="h-12 bg-white border border-gray-200 shadow-sm rounded-lg font-bold text-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition active:scale-95">6</button>
+                    
+                    <button id="btnOrderDesktop" onclick="handleCheckoutClick()" class="h-12 bg-gradient-to-b from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-bold text-lg rounded-lg shadow-md border-b-4 border-green-800 active:border-b-0 active:translate-y-1 transition-all flex flex-col items-center justify-center gap-1">
+                        <span class="text-xs font-normal opacity-80">คิดเงิน</span>
+                    </button>
+
+                    <button onclick="numpadPress('1', this)" class="h-12 bg-white border border-gray-200 shadow-sm rounded-lg font-bold text-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition active:scale-95">1</button>
+                    <button onclick="numpadPress('2', this)" class="h-12 bg-white border border-gray-200 shadow-sm rounded-lg font-bold text-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition active:scale-95">2</button>
+                    <button onclick="numpadPress('3', this)" class="h-12 bg-white border border-gray-200 shadow-sm rounded-lg font-bold text-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition active:scale-95">3</button>
+                    
+                    <button onclick="numpadAction('enter')" class="row-span-2 h-full bg-blue-500 border border-blue-600 shadow-md rounded-lg text-white font-bold text-xl hover:bg-blue-600 transition active:scale-95 flex flex-col items-center justify-center">
+                        <i class="fas fa-arrow-left mb-1"></i> Enter
+                    </button>
+
+                    <button onclick="numpadPress('0', this)" class="col-span-3 h-12 bg-white border border-gray-200 shadow-sm rounded-lg font-bold text-xl text-gray-700 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-300 transition active:scale-95">0</button>
+                </div>
+                
+                <div id="minimizedBar" class="px-4 pb-4 pt-1">
+                     <button onclick="handleCheckoutClick()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-xl shadow transition flex justify-center items-center gap-2">
+                        <span>คิดเงินรวม</span> <span id="miniTotalDisplay" class="bg-blue-700 px-2 py-0.5 rounded text-sm">0 ฿</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="mobileBottomBar" onclick="toggleCart(true)" class="md:hidden fixed bottom-4 left-4 right-4 bg-gray-900 text-white p-4 rounded-2xl shadow-2xl flex justify-between items-center z-20 cursor-pointer transform transition-all duration-300 translate-y-[150%] active:scale-95 border border-gray-700/50 backdrop-blur-md bg-opacity-95">
+            <div class="flex items-center gap-3"><div class="bg-gradient-to-r from-blue-500 to-blue-400 text-white w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-lg ring-2 ring-blue-900" id="mobileCartCount">0</div><div class="flex flex-col"><span class="text-xs text-gray-400">ยอดรวม</span><span class="font-bold text-lg leading-none text-blue-400" id="mobileCartTotal">0 ฿</span></div></div>
+            <div class="flex items-center gap-2 text-blue-400 font-bold text-sm">ดูตะกร้า <i class="fas fa-chevron-up"></i></div>
+        </div>
+    </div>
+
+    <div id="qrModal" class="fixed inset-0 bg-black/60 hidden z-[200] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-pop"><div class="bg-gray-800 p-4 text-white flex justify-between items-center"><h3 class="font-bold text-lg"><i class="fas fa-qrcode mr-2"></i>QR ลูกค้าสแกนสั่ง</h3><button onclick="closeModal('qrModal')" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8"><i class="fas fa-times"></i></button></div><div class="p-6 text-center space-y-4"><div id="qrResult" class="flex flex-col items-center pt-2"><img id="qrImage" class="w-56 h-56 border-4 border-white shadow-lg mb-3" src=""><p class="text-sm text-gray-500 mb-2">ให้ลูกค้าสแกนเพื่อเริ่มสั่งสินค้า</p><a id="qrLink" href="#" target="_blank" class="text-blue-600 text-xs underline break-all">เปิดลิงก์</a></div></div></div></div>
+    <div id="recallModal" class="fixed inset-0 bg-black/60 hidden z-[200] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-pop flex flex-col max-h-[80vh]"><div class="bg-blue-500 p-4 text-white flex justify-between items-center shrink-0"><h3 class="font-bold text-lg"><i class="fas fa-history mr-2"></i>รายการที่พักบิลไว้</h3><button onclick="closeModal('recallModal')" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8"><i class="fas fa-times"></i></button></div><div id="heldBillsList" class="p-4 overflow-y-auto space-y-2 bg-gray-50 flex-1"></div></div></div>
+
+    <div id="toast" class="fixed top-5 right-5 z-[100] transform transition-all duration-300 translate-x-[150%] bg-white border-l-4 border-green-500 shadow-2xl rounded-lg p-4 flex items-center gap-3 min-w-[300px]"><div class="bg-green-100 text-green-600 rounded-full w-8 h-8 flex items-center justify-center shrink-0"><i class="fas fa-check"></i></div><div><h4 class="font-bold text-gray-800 text-sm">สำเร็จ!</h4><p class="text-xs text-gray-500" id="toastMsg">บันทึกข้อมูลเรียบร้อย</p></div></div>
+    <div id="customAlert" class="fixed inset-0 z-[100] bg-black/70 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center animate-pop"><div id="alertIcon" class="text-5xl mb-4"></div><h3 id="alertTitle" class="text-xl font-bold text-gray-800 mb-2"></h3><p id="alertMsg" class="text-gray-500 mb-6 text-sm"></p><button onclick="closeCustomAlert()" class="w-full bg-gray-800 hover:bg-gray-900 text-white py-3 rounded-xl font-bold">ตกลง</button></div></div>
+    <div id="confirmActionModal" class="fixed inset-0 z-[300] bg-black/70 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center animate-pop"><div id="confirmActionIcon" class="text-5xl mb-4 text-red-500"></div><h3 id="confirmActionTitle" class="text-xl font-bold text-gray-800 mb-2"></h3><p id="confirmActionMsg" class="text-gray-500 mb-6 text-sm"></p><div class="flex gap-4"><button onclick="closeModal('confirmActionModal')" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 py-3 rounded-xl font-bold transition">ยกเลิก</button><button id="btnConfirmAction" onclick="" class="flex-1 bg-red-600 hover:bg-red-700 text-white py-3 rounded-xl font-bold transition">ยืนยัน</button></div></div></div>
+    
+    <div id="promptPayModal" class="fixed inset-0 bg-black/60 hidden z-[150] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-pop"><div class="bg-blue-500 p-5 text-white flex justify-between items-center"><h3 class="font-bold text-lg"><i class="fas fa-cog mr-2"></i>ตั้งค่าพร้อมเพย์</h3><button onclick="closeModal('promptPayModal')" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8"><i class="fas fa-times"></i></button></div><div class="p-6 space-y-4"><div class="bg-blue-50 p-4 rounded-xl border border-blue-100 flex items-center gap-3"><img src="https://promptpay.io/logo.png" class="w-12 h-auto opacity-80" onerror="this.style.display='none'"><div><p class="text-sm font-bold text-blue-900">สร้าง QR Code รับเงินอัตโนมัติ</p><p class="text-[10px] text-blue-600">รองรับเบอร์โทรศัพท์ และ เลขบัตรประชาชน/Tax ID</p></div></div><div><label class="block text-gray-600 text-sm font-bold mb-2">หมายเลขพร้อมเพย์</label><input type="tel" id="ppInput" class="w-full text-xl font-bold text-center border-2 border-gray-300 rounded-xl p-3 focus:border-blue-500 outline-none tracking-wider text-blue-600 placeholder-gray-300" placeholder="08X-XXX-XXXX"></div><div class="flex gap-3 pt-2"><button onclick="clearPromptPayID()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-500 font-bold py-3 rounded-xl transition">ลบ / รีเซ็ต</button><button onclick="savePromptPayID()" class="flex-[2] bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg transition">บันทึก</button></div></div></div></div>
+    <div id="manageQRModal" class="fixed inset-0 bg-black/60 hidden z-[150] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-pop"><div class="bg-gray-800 p-5 text-white flex justify-between items-center"><h3 class="font-bold text-lg"><i class="fas fa-image mr-2"></i>จัดการรูป QR Code</h3><button onclick="closeModal('manageQRModal')" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8"><i class="fas fa-times"></i></button></div><div class="p-6 text-center space-y-4"><div class="bg-gray-100 p-6 rounded-xl border-2 border-dashed border-gray-300 flex flex-col items-center justify-center"><div id="mqrStatusIcon" class="text-4xl text-gray-300 mb-2"><i class="fas fa-image"></i></div><p id="mqrStatusText" class="text-gray-500 font-medium">ไม่พบรูปภาพในระบบ</p></div><div class="flex flex-col gap-3 pt-2"><button onclick="document.getElementById('bankQRInput').click()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg transition flex justify-center items-center gap-2"><i class="fas fa-upload"></i> อัปโหลดรูปภาพใหม่</button><button id="btnDeleteQR" onclick="deleteServerQR()" class="w-full bg-red-100 hover:bg-red-200 text-red-600 font-bold py-3 rounded-xl transition hidden"><i class="fas fa-trash-alt mr-1"></i> ลบรูปภาพเดิม</button></div></div></div></div>
+
+    <div id="deliveryNotificationModal" class="fixed inset-0 bg-black/80 hidden z-[120] flex items-center justify-center p-4 backdrop-blur-md animate-fade-in"><div class="bg-white rounded-3xl shadow-[0_0_50px_rgba(59,130,246,0.25)] w-full max-w-sm overflow-hidden animate-pop relative"><div class="bg-gradient-to-br from-green-400 to-green-600 h-32 flex items-center justify-center relative overflow-hidden"><div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div><div class="bg-white/20 p-6 rounded-full shadow-lg backdrop-blur-sm animate-bounce"><i class="fas fa-shipping-fast text-5xl text-white"></i></div></div><div class="p-8 text-center"><h3 class="text-2xl font-extrabold text-gray-800 mb-2">สินค้ากำลังไปส่ง!</h3><div class="w-16 h-1 bg-green-500 mx-auto rounded-full mb-4"></div><p class="text-gray-500 mb-8 leading-relaxed">ทางร้านจัดเตรียมสินค้าเสร็จเรียบร้อยแล้ว<br>กรุณารอรับโทรศัพท์หรือรอรับสินค้าที่หน้าบ้านได้เลยค่ะ</p><button onclick="closeModal('deliveryNotificationModal')" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-4 rounded-2xl shadow-lg transition transform active:scale-95 text-lg">รับทราบครับ/ค่ะ 👍</button></div></div></div>
+    <div id="storeClosedModal" class="fixed inset-0 bg-gray-900 z-[200] hidden flex items-center justify-center p-6 animate-fade-in"><div class="bg-gray-800/90 backdrop-blur-xl border border-gray-700 rounded-3xl shadow-[0_0_50px_rgba(239,68,68,0.3)] w-full max-w-sm overflow-hidden text-center relative animate-pop"><div class="p-10"><div class="w-24 h-24 bg-gray-700 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner relative"><i class="fas fa-store-slash text-5xl text-gray-400"></i></div><h2 class="text-3xl font-extrabold text-white mb-2">ขออภัย ร้านปิดแล้ว</h2><p class="text-gray-400 mb-8">ขณะนี้อยู่นอกเวลาทำการ<br>โปรดกลับมาใหม่ในเวลาเปิดร้านนะคะ</p></div></div></div>
+    
+    <div id="myOrderModal" class="fixed inset-0 bg-black/60 hidden z-[130] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-pop flex flex-col max-h-[80vh]"><div class="bg-blue-500 p-4 text-white flex justify-between items-center shrink-0"><h3 class="font-bold"><i class="fas fa-clipboard-list mr-2"></i>รายการที่สั่งไปล่าสุด</h3><button onclick="closeModal('myOrderModal')" class="bg-white/20 rounded-full w-8 h-8"><i class="fas fa-times"></i></button></div><div id="myOrderContent" class="p-4 overflow-y-auto flex-1 bg-gray-50"><p class="text-center text-gray-400 mt-10">ยังไม่มีรายการที่สั่งล่าสุด</p></div></div></div>
+    <div id="minOrderModal" class="fixed inset-0 bg-black/80 hidden z-[130] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-3xl shadow-2xl w-full max-w-sm overflow-hidden animate-pop text-center relative border border-gray-100"><div class="pt-10 pb-8 px-8"><h3 class="text-2xl font-extrabold text-gray-800 mb-2">ยอดขั้นต่ำ 100 บาท</h3><p class="text-gray-500 mb-6 text-sm">ขออภัยค่ะ ทางร้านมีนโยบายจัดส่ง<br>เมื่อมียอดสั่งซื้อ 100 บาทขึ้นไปนะคะ</p><button onclick="closeModal('minOrderModal')" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3.5 rounded-xl shadow-lg transition transform active:scale-95 flex items-center justify-center gap-2"><i class="fas fa-cart-plus"></i> เลือกสินค้าเพิ่ม</button></div></div></div>
+    <div id="deleteBillModal" class="fixed inset-0 bg-black/80 hidden z-[500] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden animate-pop text-center relative"><div class="p-6"><h3 class="text-2xl font-extrabold text-gray-800 mb-2">ลบบิลนี้ใช่ไหม?</h3><p class="text-gray-500 text-sm mb-6">การกระทำนี้จะลบข้อมูลออกจากระบบถาวร</p><input type="hidden" id="deleteBillIdTarget"><div class="flex gap-3"><button onclick="closeModal('deleteBillModal')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold py-3 rounded-xl transition">ยกเลิก</button><button onclick="executeDeleteBill()" id="btnConfirmDeleteBill" class="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-xl shadow-lg transition transform active:scale-95">ยืนยันลบ</button></div></div></div></div>
+
+    <div id="confirmOrderModal" class="fixed inset-0 bg-black/60 hidden z-[300] flex items-end lg:items-center justify-center p-0 lg:p-4 backdrop-blur-sm"><div class="bg-white rounded-t-2xl lg:rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-slide-up h-[90vh] lg:h-auto flex flex-col"><div class="bg-gradient-to-r from-blue-500 to-blue-400 p-4 text-white flex justify-between items-center shrink-0"><h3 class="font-bold text-lg"><i class="fas fa-clipboard-check mr-2"></i>สรุปรายการขาย</h3><button onclick="closeModal('confirmOrderModal')" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8"><i class="fas fa-times"></i></button></div><div class="p-6 overflow-y-auto flex-1"><div class="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-4 max-h-40 overflow-y-auto" id="summaryList"></div><div class="space-y-4"><div class="grid grid-cols-2 gap-4"><div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">ชื่อลูกค้า / คิวที่</label><input type="text" id="tableNo" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-blue-500 outline-none text-center text-xl font-bold bg-gray-50" placeholder="เช่น 1 หรือ A"></div><div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">ประเภท</label><select id="orderType" onchange="toggleAddressFields()" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-blue-500 outline-none bg-white font-bold text-gray-700 h-full"><option value="ซื้อหน้าร้าน">🛒 ซื้อหน้าร้าน</option><option value="ส่งเดลิเวอรี่">🛵 ส่งเดลิเวอรี่</option><option value="จองไว้ก่อน">📦 จองไว้ก่อน</option></select></div></div><div id="addressSection" class="hidden bg-blue-50 p-3 rounded-xl border border-blue-200 animate-fade-in"><label class="block text-xs font-bold text-blue-800 uppercase mb-2"><i class="fas fa-map-marker-alt text-red-500"></i> ที่อยู่จัดส่ง</label><div class="grid grid-cols-2 gap-3"><div><label class="text-[10px] text-gray-500 font-bold">บ้านเลขที่</label><input type="text" id="addrHouseNo" class="w-full border border-blue-200 rounded-lg p-2 focus:border-blue-500 outline-none text-sm bg-white" placeholder="123/45"></div><div><label class="text-[10px] text-gray-500 font-bold">ซอย / ถนน</label><input type="text" id="addrSoi" class="w-full border border-blue-200 rounded-lg p-2 focus:border-blue-500 outline-none text-sm bg-white" placeholder="ซอย 5"></div></div></div><div><label class="block text-xs font-bold text-gray-500 uppercase mb-1">หมายเหตุ</label><textarea id="orderNote" class="w-full border-2 border-gray-200 rounded-xl p-3 focus:border-blue-500 outline-none text-sm" rows="2" placeholder="เช่น ใส่ถุงแยก, รอจ่ายเงิน..."></textarea></div></div></div><div class="p-4 border-t bg-gray-50 shrink-0"><button onclick="submitOrder()" id="btnSubmitOrder" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg text-lg flex justify-center items-center gap-2 transition-all active:scale-95"><span class="btn-text">ยืนยันรายการ</span> <i class="fas fa-check-circle"></i></button></div></div></div>
+    
+    <div id="kitchenModal" class="fixed inset-0 bg-gray-100 hidden z-[200] flex flex-col animate-slide-up"><div class="bg-gray-800 p-4 text-white flex justify-between items-center shadow-md shrink-0"><h3 class="font-bold text-lg"><i class="fas fa-box mr-2 text-blue-400"></i>รายการต้องจัดเตรียม</h3><div class="flex gap-2"><button onclick="fetchOrders()" class="bg-white/20 rounded px-3 py-1"><i class="fas fa-sync-alt"></i></button><button onclick="closeModal('kitchenModal')" class="bg-white/20 rounded px-3 py-1"><i class="fas fa-times"></i></button></div></div><div class="flex-1 overflow-y-auto p-4 bg-gray-100 custom-scrollbar"><div id="kitchenGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-10"></div></div></div>
+    
+    <div id="paymentModal" class="fixed inset-0 z-[100] hidden flex items-start justify-start">
+        <div class="absolute inset-0" onclick="closeModal('paymentModal')"></div>
+        <div id="draggableModal" class="bg-white rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.2)] w-full max-w-xs overflow-hidden animate-pop absolute border border-gray-200 z-[200]" style="left: 10%; top: 20%;">
+            
+            <div id="modalHeader" class="bg-gradient-to-r from-blue-500 to-blue-400 p-3 text-white flex justify-between items-center shrink-0 cursor-move shadow-sm">
+                <h3 class="font-bold text-base"><i class="fas fa-hand-holding-usd mr-2"></i>รับเงิน</h3>
+                <button onclick="closeModal('paymentModal')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm"><i class="fas fa-times text-sm"></i></button>
+            </div>
+            
+            <div class="p-4">
+                <div id="quickPayTableNoContainer" class="hidden"><input type="text" id="quickPayTableNo"></div>
+                
+                <div id="modalChangeBox" class="opacity-0 transform translate-y-2 transition-all duration-300 w-full mb-3">
+                    </div>
+
+                <div class="bg-gray-50 p-2 rounded-xl border border-gray-100 text-center mb-4 relative group-qr">
+                    <button onclick="togglePaymentMenu()" class="absolute top-3 right-3 z-20 w-8 h-8 bg-white/90 hover:bg-white rounded-full text-gray-500 hover:text-blue-500 shadow-md flex items-center justify-center transition backdrop-blur-sm border border-gray-200"><i class="fas fa-ellipsis-v"></i></button>
+                    
+                    <div id="paymentSettingsMenu" class="hidden absolute top-12 right-3 z-30 bg-white shadow-xl rounded-xl border border-gray-100 p-1.5 w-44 flex flex-col gap-1 animate-pop origin-top-right">
+                        <button onclick="openPromptPayModal(); togglePaymentMenu()" class="text-left text-xs font-bold text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition flex items-center"><i class="fas fa-cog w-6 text-center mr-1"></i> ตั้งค่าพร้อมเพย์</button>
+                        <button onclick="checkAndUseOriginalQR(); togglePaymentMenu()" class="text-left text-xs font-bold text-gray-600 hover:bg-gray-100 p-2 rounded-lg transition flex items-center"><i class="fas fa-image w-6 text-center mr-1"></i> ใช้รูปเดิม</button>
+                        <div class="h-px bg-gray-100 my-0.5"></div>
+                        <button onclick="document.getElementById('bankQRInput').click(); togglePaymentMenu()" class="text-left text-xs font-bold text-gray-500 hover:bg-gray-100 p-2 rounded-lg transition flex items-center"><i class="fas fa-upload w-6 text-center mr-1"></i> อัปโหลดรูปใหม่</button>
+                    </div>
+                    
+                    <div class="relative overflow-hidden rounded-lg bg-white h-48 flex items-center justify-center cursor-pointer group shadow-inner" onclick="handleQRClick()">
+                        <img id="bankQRImage" src="" class="h-full w-auto object-contain p-2" alt="QR">
+                        <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-white text-xs font-bold"><i class="fas fa-expand"></i> ดูรูปเต็ม</span></div>
+                    </div>
+                    <input type="file" id="bankQRInput" class="hidden" accept="image/*" onchange="uploadBankQRFile(this)">
+                </div>
+                
+                <div id="modalTotalWrapper" class="flex justify-center items-baseline gap-2 mb-4 w-full transition-all duration-500 ease-out origin-top">
+                    <span id="modalTotalPay" class="text-6xl font-black text-blue-500 drop-shadow-md">0</span>
+                    <span class="text-3xl font-extrabold text-blue-600">฿</span>
+                </div>
+
+                <div class="mb-4 relative text-center">
+                    <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wide">ยอดเงินที่รับ</label>
+                    <div class="relative">
+                        <input type="text" id="inputReceived" inputmode="none" oninput="this.value = this.value.replace(/[^0-9]/g, ''); calcChange()" onkeydown="checkPaymentEnter(event)" class="w-1/3 mx-auto block text-base font-bold text-center border border-blue-400 rounded-md py-1 px-2 text-blue-600 placeholder-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-300 outline-none transition-all shadow-inner bg-blue-50" placeholder="0">
+                    </div>
+                </div>
+                
+                <button onclick="confirmPayment()" id="btnConfirmPay" class="w-full mx-auto block bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl text-lg shadow-lg transition transform active:scale-95">ยืนยันรับเงิน</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="editMenuModal" class="fixed inset-0 bg-black/60 hidden z-[200] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-pop"><div class="bg-gray-800 p-4 flex justify-between items-center text-white"><h3 class="font-bold text-lg text-white">แก้ไขข้อมูลสินค้า</h3><button onclick="closeModal('editMenuModal')" class="bg-white/10 rounded-full w-8 h-8 text-white"><i class="fas fa-times"></i></button></div><form id="editMenuForm" class="p-6 space-y-4"><input type="hidden" id="eId"><div><label class="label">ชื่อสินค้า</label><input type="text" id="eName" required class="input-box"></div><div class="flex gap-4"><div class="flex-1"><label class="label">ราคา</label><input type="number" id="ePrice" required class="input-box"></div><div class="flex-1"><label class="label">หมวดหมู่</label><select id="eCategory" class="input-box"></select></div></div><div class="flex gap-3 pt-2"><button type="button" onclick="deleteMenu()" id="btnDeleteMenu" class="flex-1 bg-red-50 text-red-600 font-bold py-3 rounded-xl border border-red-200">ลบ</button><button type="submit" id="btnEditSave" class="flex-[2] bg-blue-500 text-white font-bold py-3 rounded-xl shadow">บันทึก</button></div></form></div></div>
+    
+    <div id="addModal" class="fixed inset-0 bg-black/60 hidden z-[1000] flex items-center justify-center p-4 backdrop-blur-sm"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-pop"><div class="bg-green-600 p-4 flex justify-between items-center text-white"><h3 class="font-bold text-lg">เพิ่มสินค้าใหม่</h3><button onclick="closeModal('addModal')" class="bg-white/20 rounded-full w-8 h-8"><i class="fas fa-times"></i></button></div><form id="addMenuForm" class="p-6 space-y-4"><div class="mb-4 bg-gray-50 p-3 rounded-xl border border-dashed border-gray-300"><label class="label text-gray-600 font-bold flex items-center gap-2 mb-2"><i class="fas fa-barcode text-gray-400"></i> รหัสสินค้า / Barcode <span class="text-[10px] font-normal text-gray-400 bg-white px-2 py-0.5 rounded-full border border-gray-200">ไม่บังคับ</span></label><div class="relative"><input type="text" id="mCode" class="input-box pl-10 font-mono text-blue-600 font-bold tracking-wider placeholder-gray-300 focus:bg-white transition-colors" placeholder="สแกน หรือ พิมพ์รหัส"><div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"><i class="fas fa-tag text-gray-300"></i></div></div><p class="text-[10px] text-gray-400 mt-1.5 ml-1"><i class="fas fa-info-circle"></i> หากระบุ ระบบจะใช้รหัสนี้เป็น ID สินค้า</p></div><div><label class="label">ชื่อสินค้า</label><input type="text" id="mName" required class="input-box"></div><div class="flex gap-4"><div class="flex-1"><label class="label">ราคา</label><input type="number" id="mPrice" required class="input-box"></div><div class="flex-1"><label class="label">หมวดหมู่</label><select id="mCategory" class="input-box"></select></div></div><div><label class="label">รูปสินค้า</label><input type="file" id="mFile" accept="image/*" class="w-full text-sm"></div><button type="submit" id="btnSaveMenu" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl shadow mt-2 flex justify-center items-center gap-2"><span class="btn-text">บันทึก</span> <i class="fas fa-save"></i></button></form></div></div>
+    
+    <div id="salesModal" class="fixed inset-0 bg-black/60 hidden z-[200] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-pop"><div class="bg-gradient-to-r from-blue-500 to-blue-600 p-5 text-white flex justify-between items-center shadow-md relative overflow-hidden"><div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div><h3 class="font-bold text-lg flex items-center gap-2 relative z-10"><i class="fas fa-chart-pie"></i> สรุปยอดขาย</h3><button onclick="closeModal('salesModal')" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8 transition flex items-center justify-center relative z-10"><i class="fas fa-times"></i></button></div><div class="p-6 space-y-4 bg-gray-50"><div class="bg-gradient-to-br from-blue-100 to-blue-200 p-6 rounded-2xl text-center border border-blue-300 shadow-sm relative overflow-hidden transform hover:scale-[1.02] transition-transform"><div class="absolute top-0 right-0 p-4 opacity-10"><i class="fas fa-coins text-7xl text-blue-600"></i></div><div class="relative z-10"><p class="text-blue-700 text-sm uppercase font-extrabold tracking-wider mb-1"><i class="fas fa-calendar-day mr-1"></i>ยอดขายวันนี้</p><div class="flex justify-center items-baseline gap-2 mt-1"><h2 class="text-5xl font-extrabold text-blue-600 drop-shadow-sm" id="saleToday">...</h2><span class="text-xl text-blue-500 font-bold">฿</span></div></div></div><div class="grid grid-cols-2 gap-4"><div class="bg-white p-4 rounded-2xl text-center border border-gray-200 shadow-sm"><p class="text-xs text-gray-500 font-bold mb-1 uppercase tracking-wide">เมื่อวาน</p><div class="flex justify-center items-baseline gap-1"><h3 class="font-extrabold text-gray-700 text-2xl" id="saleYest">...</h3><span class="text-xs text-gray-400 font-bold">฿</span></div></div><div class="bg-white p-4 rounded-2xl text-center border border-gray-200 shadow-sm"><p class="text-xs text-gray-500 font-bold mb-1 uppercase tracking-wide">เดือนนี้</p><div class="flex justify-center items-baseline gap-1"><h3 class="font-extrabold text-gray-700 text-2xl" id="saleMonth">...</h3><span class="text-xs text-gray-400 font-bold">฿</span></div></div></div></div></div></div>
+    
+    <div id="historyModal" class="fixed inset-0 bg-black/60 hidden z-[200] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl h-[80vh] flex flex-col animate-pop overflow-hidden"><div class="bg-gradient-to-r from-indigo-600 to-purple-700 p-5 text-white flex justify-between items-center shadow-md relative"><div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div><h3 class="font-bold text-lg flex items-center gap-2 relative z-10"><div class="bg-white/20 w-8 h-8 rounded-lg flex items-center justify-center shadow-inner"><i class="fas fa-history"></i></div> ประวัติการขาย <span class="text-xs font-normal text-indigo-100 bg-black/20 border border-white/10 px-2 py-1 rounded-full ml-1">ล่าสุด 400 บิล</span></h3><button onclick="closeModal('historyModal')" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8 transition flex items-center justify-center relative z-10 shadow-sm"><i class="fas fa-times"></i></button></div><div class="flex-1 overflow-y-auto p-4 bg-gray-50 relative custom-scrollbar"><div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden"><table class="w-full text-left border-collapse"><thead class="bg-gray-100 text-gray-500 text-xs uppercase sticky top-0 z-10 shadow-sm border-b border-gray-200"><tr><th class="p-3 pl-4 w-20">เวลา</th><th class="p-3">รายการสินค้า</th><th class="p-3 pr-4 text-right w-24">ยอดรวม</th></tr></thead><tbody id="historyList" class="text-sm divide-y divide-gray-100"></tbody></table></div></div></div></div>
+    
+    <div id="billDetailModal" class="fixed inset-0 bg-black/80 hidden z-[200] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in"><div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg lg:max-w-xl overflow-hidden animate-pop relative max-h-[90vh] h-full flex flex-col"><div id="billDetailContent" class="flex flex-col flex-1 h-full"></div></div></div>
+    <div id="exportModal" class="fixed inset-0 bg-black/60 hidden z-[200] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-pop flex flex-col max-h-[90vh]">
+        <div class="bg-gray-800 p-4 text-white flex justify-between items-center shrink-0">
+            <h3 class="font-bold text-lg"><i class="fas fa-database mr-2 text-blue-400"></i>จัดการข้อมูลระบบ</h3>
+            <button onclick="closeModal('exportModal')" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8 transition"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="p-6 space-y-4 bg-gray-50 flex-1 overflow-y-auto custom-scrollbar">
+            <div class="bg-gradient-to-r from-blue-500 to-blue-600 p-5 rounded-2xl shadow-[0_10px_20px_rgba(59,130,246,0.2)] text-white flex justify-between items-center transform hover:-translate-y-1 hover:shadow-[0_15px_30px_rgba(59,130,246,0.3)] transition-all duration-300 cursor-pointer relative overflow-hidden" onclick="openDashboardModal()">
+                <div class="absolute -right-4 -top-4 opacity-10 transform rotate-12">
+                    <i class="fas fa-chart-line text-8xl"></i>
+                </div>
+                <div class="relative z-10">
+                    <h4 class="font-extrabold text-xl leading-tight drop-shadow-md"><i class="fas fa-tachometer-alt mr-2"></i> แดชบอร์ดสรุปข้อมูล</h4>
+                    <p class="text-sm text-blue-100 mt-1 font-medium">ดูสถิติเชิงลึก ยอดขาย และสินค้ายอดฮิต</p>
+                </div>
+                <div class="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-xl shadow-inner relative z-10">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+            
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <h4 class="font-bold text-blue-700 mb-1"><i class="fas fa-cloud-download-alt"></i> สำรอง & กู้คืนข้อมูล</h4>
+                <p class="text-[10px] text-gray-500 mb-3 font-bold">เพื่อป้องกันข้อมูลหาย หรือต้องการย้ายเครื่อง</p>
+                <div class="flex gap-2">
+                    <button onclick="backupData()" id="btnBackup" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded-lg text-xs shadow transition active:scale-95"><i class="fas fa-save mr-1"></i> <span class="btn-text">สร้างไฟล์ Backup</span></button>
+                    
+                    <input type="file" id="restoreInput" accept=".json" class="hidden" onchange="restoreData(event)">
+                    <button onclick="document.getElementById('restoreInput').click()" id="btnRestore" class="flex-1 bg-white hover:bg-gray-100 text-gray-700 border border-gray-300 font-bold py-2 rounded-lg text-xs shadow-sm transition active:scale-95"><i class="fas fa-upload mr-1"></i> <span class="btn-text">กู้คืน (ย้ายเครื่อง)</span></button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-white p-3 rounded-xl border border-green-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-bold text-green-700 mb-1 text-xs"><i class="fas fa-box-open"></i> ฐานข้อมูลสินค้า</h4>
+                        <p class="text-[9px] text-gray-500 mb-2 font-bold leading-tight">เพิ่ม/อัปเดตสินค้าจำนวนมากจากไฟล์ CSV</p>
+                    </div>
+                    <input type="file" id="importCSVInput" accept=".csv" class="hidden" onchange="handleImportCSV(event)">
+                    <button onclick="document.getElementById('importCSVInput').click()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-2 rounded-lg text-[10px] shadow-sm transition active:scale-95 mt-auto">
+                        <i class="fas fa-file-import mr-1"></i> นำเข้าสินค้า
+                    </button>
+                </div>
+
+                <div class="bg-white p-3 rounded-xl border border-indigo-200 shadow-sm flex flex-col justify-between">
+                    <div>
+                        <h4 class="font-bold text-indigo-700 mb-1 text-xs"><i class="fas fa-history"></i> ประวัติการขาย</h4>
+                        <p class="text-[9px] text-gray-500 mb-2 font-bold leading-tight">นำเข้าบิลเก่า เพื่อสรุปยอดขายย้อนหลัง</p>
+                    </div>
+                    <input type="file" id="importHistoryInput" accept=".csv" class="hidden" onchange="importHistoryCSV(event)">
+                    <button onclick="document.getElementById('importHistoryInput').click()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 rounded-lg text-[10px] shadow-sm transition active:scale-95 mt-auto">
+                        <i class="fas fa-file-import mr-1"></i> นำเข้าบิลเก่า
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                <h4 class="font-bold text-red-700 mb-1"><i class="fas fa-file-invoice-dollar"></i> รายงานภาษี / สินเชื่อ (PDF)</h4>
+                <p class="text-[10px] text-gray-500 mb-3 font-bold">เอกสารรับรองยอดขายแบบเป็นทางการ</p>
+                <div class="space-y-3">
+                    <div>
+                        <select id="exportType" class="w-full border border-gray-300 rounded-lg p-2 focus:border-red-500 outline-none font-bold text-gray-700 text-sm bg-gray-50">
+                            <option value="MonthlySales">สรุปยอดขายรายเดือน</option>
+                            <option value="DailySales">สรุปยอดขายรายวัน</option>
+                            <option value="Bill">รายละเอียดรายการบิล</option>
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div>
+                            <label class="block text-gray-500 text-[10px] font-bold mb-1 uppercase">ตั้งแต่วันที่</label>
+                            <input type="date" id="exportStartDate" class="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-red-500 text-sm bg-gray-50">
+                        </div>
+                        <div>
+                            <label class="block text-gray-500 text-[10px] font-bold mb-1 uppercase">ถึงวันที่</label>
+                            <input type="date" id="exportEndDate" class="w-full border border-gray-300 rounded-lg p-2 outline-none focus:border-red-500 text-sm bg-gray-50">
+                        </div>
+                    </div>
+                    <button onclick="executeExportPDF()" id="btnDoExport" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-2.5 rounded-lg shadow-md mt-2 flex justify-center items-center gap-2 transition transform active:scale-95"><span class="btn-text">พิมพ์รายงาน PDF</span> <i class="fas fa-print"></i></button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<div id="dashboardModal" class="fixed inset-0 bg-black/80 hidden z-[250] flex items-center justify-center p-2 sm:p-4 backdrop-blur-md animate-fade-in">
+        <div class="bg-gray-100 rounded-3xl shadow-[0_0_40px_rgba(59,130,246,0.3)] w-full max-w-5xl overflow-hidden animate-pop flex flex-col h-[95vh]">
+            <div class="bg-gradient-to-r from-blue-700 via-blue-600 to-blue-500 p-5 text-white flex justify-between items-center shadow-lg shrink-0 relative overflow-hidden">
+                <div class="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10"></div>
+                <h3 class="font-extrabold text-xl flex items-center gap-2 relative z-10"><i class="fas fa-chart-line"></i> Analytics Dashboard</h3>
+                
+                <div class="flex items-center gap-3 relative z-10">
+                    <button id="btnExportDash" onclick="exportDashboardPDF()" class="bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg text-sm font-bold transition flex items-center gap-2 shadow-sm border border-white/30 active:scale-95">
+                        <i class="fas fa-file-pdf"></i> <span class="hidden sm:inline">Export PDF</span>
+                    </button>
+                    <button onclick="closeModal('dashboardModal')" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8 transition flex justify-center items-center"><i class="fas fa-times"></i></button>
+                </div>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 sm:p-6 custom-scrollbar relative">
+                <div id="dashLoading" class="absolute inset-0 flex flex-col items-center justify-center bg-gray-100/90 z-20 backdrop-blur-sm">
+                    <i class="fas fa-circle-notch fa-spin text-5xl text-blue-500 mb-4"></i>
+                    <p class="text-blue-800 font-bold text-lg animate-pulse">กำลังประมวลผลข้อมูล...</p>
+                </div>
+
+                <div id="dashContent" class="hidden space-y-6">
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                            <h4 class="text-sm font-bold text-gray-500 uppercase tracking-widest mb-3 border-b pb-2"><i class="fas fa-calendar-day mr-1 text-blue-500"></i> สรุปวันนี้</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-bold text-gray-400">ยอดขายวันนี้</p>
+                                    <h3 class="text-2xl sm:text-3xl font-black text-blue-600 leading-tight" id="dashTodaySales">0</h3>
+                                    <p class="text-[10px] font-bold mt-1" id="dashGrowth"><span class="text-gray-400">เทียบเมื่อวาน 0%</span></p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-bold text-gray-400">กำไร 12.5% (วันนี้)</p>
+                                    <h3 class="text-2xl sm:text-3xl font-black text-green-500 leading-tight" id="dashTodayProfit">0</h3>
+                                    <p class="text-[10px] text-gray-400 font-bold mt-1">จำนวนบิล: <span id="dashTodayBills" class="text-gray-600">0</span></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-gradient-to-br from-indigo-50 to-blue-50 p-5 rounded-2xl border border-indigo-100 shadow-sm relative overflow-hidden">
+                            <div class="absolute -right-4 -bottom-4 opacity-5"><i class="fas fa-calendar-alt text-8xl text-indigo-900"></i></div>
+                            <h4 class="text-sm font-bold text-indigo-600 uppercase tracking-widest mb-3 border-b border-indigo-200 pb-2 relative z-10"><i class="fas fa-history mr-1"></i> สรุปเดือนที่ผ่านมา (<span id="lastMonthNameLabel">...</span>)</h4>
+                            <div class="grid grid-cols-2 gap-4 relative z-10">
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-bold text-indigo-400">ยอดขายทั้งเดือน</p>
+                                    <h3 class="text-2xl sm:text-3xl font-black text-indigo-700 leading-tight" id="dashLastMonthSales">0</h3>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] sm:text-xs font-bold text-indigo-400">กำไร 12.5% (ทั้งเดือน)</p>
+                                    <h3 class="text-2xl sm:text-3xl font-black text-green-600 leading-tight" id="dashLastMonthProfit">0</h3>
+                                </div>
+                                
+                                <div class="col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+                                    <div>
+                                        <p class="text-[10px] sm:text-xs font-bold text-indigo-400 mb-2">ช่วงเวลาลูกค้าเยอะสุด (Top 3)</p>
+                                        <div id="dashLastMonthPeak" class="flex flex-col gap-2"></div>
+                                    </div>
+                                    <div>
+                                        <p class="text-[10px] sm:text-xs font-bold text-indigo-400 mb-2">สินค้าขายดี (Top 3)</p>
+                                        <div id="dashLastMonthTopItems" class="flex flex-col gap-2"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                        <h4 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2"><i class="fas fa-chart-bar text-blue-500 mr-2"></i> กราฟยอดขายและกำไร ปีนี้ (ตั้งแต่ ม.ค.)</h4>
+                        <div class="relative w-full h-[250px] sm:h-[300px]">
+                            <canvas id="salesChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                            <h4 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2 flex justify-between items-center">
+                                <span><i class="fas fa-trophy text-yellow-500 mr-2"></i> 5 สินค้าทำเงินสูงสุด (<span id="thisMonthNameLabel">เดือนนี้</span>)</span>
+                            </h4>
+                            <div id="dashTopItems" class="space-y-4"></div>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div class="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
+                                <h4 class="font-bold text-gray-800 mb-4 border-b border-gray-100 pb-2"><i class="fas fa-clock text-blue-500 mr-2"></i> ช่วงเวลาลูกค้าเยอะสุด (วิเคราะห์จากวัน จ.-อา.)</h4>
+                                <div id="dashPeakHours" class="flex flex-col gap-3"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="script.js"></script>
+</body>
+</html>

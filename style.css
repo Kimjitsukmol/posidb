@@ -1,0 +1,77 @@
+@keyframes heartbeat { 
+    0% { transform: scale(1); } 
+    50% { transform: scale(1.15); } 
+    100% { transform: scale(1); } 
+}
+.animate-heartbeat { 
+    animation: heartbeat 1.2s infinite ease-in-out; 
+    display: inline-block; 
+}
+
+/* เอฟเฟคพื้นหลังเคลื่อนไหว */
+@keyframes blob { 
+    0% { transform: translate(0px, 0px) scale(1); } 
+    33% { transform: translate(30px, -50px) scale(1.1); } 
+    66% { transform: translate(-20px, 20px) scale(0.9); } 
+    100% { transform: translate(0px, 0px) scale(1); } 
+}
+.animate-blob { animation: blob 7s infinite; }
+.animation-delay-2000 { animation-delay: 2s; }
+.animation-delay-4000 { animation-delay: 4s; }
+body { font-family: 'Kanit', sans-serif; touch-action: manipulation; }
+
+/* เปลี่ยนสี Scrollbar เป็นสีฟ้าอ่อน */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-thumb { background: #93c5fd; border-radius: 4px; } /* tailwind: blue-300 */
+
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+.smooth-scroll { -webkit-overflow-scrolling: touch; }
+
+/* แอนิเมชันต่างๆ (โครงสร้างเดิม) */
+.animate-fade-in { animation: fadeIn 0.2s ease-out; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.animate-slide-up { animation: slideUp 0.3s ease-out; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.animate-pop { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+@keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+/* เปลี่ยนเอฟเฟคไฟกะพริบแจ้งเตือนเป็นสีฟ้า */
+.badge-pulse { animation: pulse-blue 2s infinite; }
+@keyframes pulse-blue { 
+    0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); } /* tailwind: blue-500 */
+    70% { transform: scale(1.1); box-shadow: 0 0 0 6px rgba(59, 130, 246, 0); } 
+    100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); } 
+}
+
+/* เปลี่ยนเอฟเฟคเวลากดปุ่มเครื่องคิดเลขเป็นสีฟ้า */
+.btn-pop {
+    transform: scale(1.25) !important; 
+    background-color: #eff6ff !important; /* พื้นหลังสีฟ้าอ่อน blue-50 */
+    color: #2563eb !important; /* ตัวอักษรสีฟ้าเข้ม blue-600 */
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2) !important;
+    z-index: 50; 
+    transition: all 0.1s ease-out; 
+}
+
+.label {
+    display: block;
+    font-size: .75rem;
+    font-weight: 700;
+    color: #6b7280;
+    text-transform: uppercase;
+    margin-bottom: .25rem;
+}
+.input-box {
+    width: 100%;
+    border: 2px solid #e5e7eb;
+    border-radius: .75rem;
+    padding: .75rem;
+    outline: none;
+    transition: border-color .2s;
+}
+
+/* เปลี่ยนสีกรอบเวลากดพิมพ์ข้อความให้เป็นสีฟ้า */
+.input-box:focus {
+    border-color: #3b82f6; /* สีฟ้า blue-500 */
+}
