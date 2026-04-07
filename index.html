@@ -102,7 +102,7 @@
 </div>
         </div>
 
-        <div id="cartPanel" class="hidden md:flex flex-col w-full md:w-[340px] lg:w-[400px] bg-white shadow-2xl border-l border-gray-200 z-40 md:z-[101] fixed inset-0 md:relative md:h-auto animate-slide-up md:animate-none">
+        <div id="cartPanel" class="hidden md:flex flex-col w-full md:w-[340px] lg:w-[400px] bg-white shadow-2xl border-l border-gray-200 z-40 md:z-[40] fixed inset-0 md:relative md:h-auto animate-slide-up md:animate-none">
             
             <div class="lg:hidden bg-gradient-to-r from-blue-500 to-blue-400 text-white p-4 flex justify-between items-center shadow-md shrink-0">
                 <h2 class="text-xl font-bold"><i class="fas fa-shopping-cart mr-2"></i>ตะกร้าสินค้า</h2>
@@ -215,51 +215,105 @@
     
     <div id="kitchenModal" class="fixed inset-0 bg-gray-100 hidden z-[200] flex flex-col animate-slide-up"><div class="bg-gray-800 p-4 text-white flex justify-between items-center shadow-md shrink-0"><h3 class="font-bold text-lg"><i class="fas fa-box mr-2 text-blue-400"></i>รายการต้องจัดเตรียม</h3><div class="flex gap-2"><button onclick="fetchOrders()" class="bg-white/20 rounded px-3 py-1"><i class="fas fa-sync-alt"></i></button><button onclick="closeModal('kitchenModal')" class="bg-white/20 rounded px-3 py-1"><i class="fas fa-times"></i></button></div></div><div class="flex-1 overflow-y-auto p-4 bg-gray-100 custom-scrollbar"><div id="kitchenGrid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pb-10"></div></div></div>
     
-    <div id="paymentModal" class="fixed inset-0 z-[100] hidden flex items-start justify-start">
-        <div class="absolute inset-0" onclick="closeModal('paymentModal')"></div>
-        <div id="draggableModal" class="bg-white rounded-2xl shadow-[0_0_50px_rgba(0,0,0,0.2)] w-full max-w-xs overflow-hidden animate-pop absolute border border-gray-200 z-[200]" style="left: 10%; top: 20%;">
+    <div id="paymentModal" class="fixed inset-0 z-[100] bg-black/60 hidden flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
+        
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-4xl overflow-hidden animate-pop relative flex flex-col max-h-[90vh]">
             
-            <div id="modalHeader" class="bg-gradient-to-r from-blue-500 to-blue-400 p-3 text-white flex justify-between items-center shrink-0 cursor-move shadow-sm">
-                <h3 class="font-bold text-base"><i class="fas fa-hand-holding-usd mr-2"></i>รับเงิน</h3>
-                <button onclick="closeModal('paymentModal')" onmousedown="event.stopPropagation()" ontouchstart="event.stopPropagation()" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm"><i class="fas fa-times text-sm"></i></button>
+            <div id="modalHeader" class="bg-gradient-to-r from-blue-500 to-blue-400 p-4 text-white flex justify-between items-center shrink-0 shadow-sm">
+                <h3 class="font-bold text-lg"><i class="fas fa-hand-holding-usd mr-2"></i>รับเงิน</h3>
+                <button onclick="closeModal('paymentModal')" class="bg-white/20 hover:bg-white/30 rounded-full w-8 h-8 flex items-center justify-center transition shadow-sm"><i class="fas fa-times"></i></button>
             </div>
             
-            <div class="p-4">
-                <div id="quickPayTableNoContainer" class="hidden"><input type="text" id="quickPayTableNo"></div>
+            <div class="flex flex-col md:flex-row flex-1 overflow-hidden">
                 
-                <div id="modalChangeBox" class="opacity-0 transform translate-y-2 transition-all duration-300 w-full mb-3">
+                <div class="hidden md:flex w-full md:w-[40%] bg-gray-100 relative flex-col items-center p-4 border-r border-gray-200 overflow-y-auto custom-scrollbar">
+                    
+                    <div class="bg-white w-full max-w-[280px] text-gray-800 text-[11px] shadow-sm p-4 pb-6 relative font-mono mx-auto">
+                        <div class="text-center mb-3">
+                            <h3 class="font-bold text-[14px]">ร้านเจ้พินขายของชำ</h3>
+                            <p>29/30 บ่อวิน ศรีราชา ชลบุรี 20230</p>
+                            <p class="mt-2 font-bold text-[13px]">ใบเสร็จรับเงิน</p>
+                        </div>
+                        
+                        <div class="mb-2 space-y-0.5">
+                            <div class="flex gap-2"><span>เลขที่:</span> <span id="slipOrderNo">...</span></div>
+                            <div class="flex gap-2"><span>วันที่:</span> <span id="slipDate">...</span></div>
+                        </div>
+                        
+                        <div class="border-t border-b border-gray-800 py-1 mb-2 flex font-bold">
+                            <div class="flex-1 text-center">รายการ</div>
+                            <div class="w-14 text-right">หน่วยละ</div>
+                            <div class="w-16 text-right">รวมเงิน</div>
+                        </div>
+                        
+                        <div id="paymentReceiptItems" class="space-y-1.5 mb-2 min-h-[50px]"></div>
+                        
+                        <div class="border-t border-gray-800 pt-1 pb-1">
+                            <div class="flex gap-4">
+                                <span>รายการ: <span id="slipItemCount">0</span></span>
+                                <span>จำนวนชิ้น: <span id="slipTotalQty">0</span></span>
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-800 pt-1 space-y-1">
+                            <div class="flex justify-between font-bold">
+                                <span>รวมเป็นเงิน</span>
+                                <span id="paymentReceiptTotal">0.00</span>
+                            </div>
+                            <div class="flex justify-between font-bold text-[13px] mt-1">
+                                <span>รวมทั้งสิ้น</span>
+                                <span id="paymentReceiptTotal2">0.00</span>
+                            </div>
+                        </div>
+                        
+                        <div class="border-t border-gray-800 pt-1 mt-2 flex justify-between">
+                            <span>รับเงิน <span id="slipReceived">0.00</span></span>
+                            <span>เงินทอน <span id="slipChange">0.00</span></span>
+                        </div>
+                        
+                        <div class="text-center mt-6 pt-2">
+                            <p>ขอบคุณที่ใช้บริการ</p>
+                        </div>
+
+                        <div class="absolute bottom-0 left-0 right-0 h-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPjxwb2x5Z29uIGZpbGw9IiNmM2Y0ZjYiIHBvaW50cz0iMCA4IDQgMCA4IDgiLz48L3N2Zz4=')]"></div>
+                    </div>
+                </div>
+
+                <div class="w-full md:w-[60%] p-6 bg-white relative flex flex-col h-full overflow-y-auto custom-scrollbar">
+                    <div id="quickPayTableNoContainer" class="hidden"><input type="text" id="quickPayTableNo"></div>
+                    
+                    <div id="modalChangeBox" class="opacity-0 transform translate-y-2 transition-all duration-300 w-full mb-3 shrink-0"></div>
+
+                    <div class="bg-gray-50 p-2 rounded-xl border border-gray-100 text-center mb-4 relative group-qr shrink-0">
+                        <button onclick="togglePaymentMenu()" class="absolute top-3 right-3 z-20 w-8 h-8 bg-white/90 hover:bg-white rounded-full text-gray-500 hover:text-blue-500 shadow-md flex items-center justify-center transition backdrop-blur-sm border border-gray-200"><i class="fas fa-ellipsis-v"></i></button>
+                        
+                        <div id="paymentSettingsMenu" class="hidden absolute top-12 right-3 z-30 bg-white shadow-xl rounded-xl border border-gray-100 p-1.5 w-44 flex flex-col gap-1 animate-pop origin-top-right">
+                            <button onclick="openPromptPayModal(); togglePaymentMenu()" class="text-left text-xs font-bold text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition flex items-center"><i class="fas fa-cog w-6 text-center mr-1"></i> ตั้งค่าพร้อมเพย์</button>
+                            <button onclick="checkAndUseOriginalQR(); togglePaymentMenu()" class="text-left text-xs font-bold text-gray-600 hover:bg-gray-100 p-2 rounded-lg transition flex items-center"><i class="fas fa-image w-6 text-center mr-1"></i> ใช้รูปเดิม</button>
+                            <div class="h-px bg-gray-100 my-0.5"></div>
+                            <button onclick="document.getElementById('bankQRInput').click(); togglePaymentMenu()" class="text-left text-xs font-bold text-gray-500 hover:bg-gray-100 p-2 rounded-lg transition flex items-center"><i class="fas fa-upload w-6 text-center mr-1"></i> อัปโหลดรูปใหม่</button>
+                        </div>
+                        
+                        <div class="relative overflow-hidden rounded-lg bg-white h-48 flex items-center justify-center cursor-pointer group shadow-inner" onclick="handleQRClick()">
+                            <img id="bankQRImage" src="" class="h-full w-auto object-contain p-2" alt="QR">
+                            <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-white text-xs font-bold"><i class="fas fa-expand"></i> ดูรูปเต็ม</span></div>
+                        </div>
+                        <input type="file" id="bankQRInput" class="hidden" accept="image/*" onchange="uploadBankQRFile(this)">
+                    </div>
+                    
+                    <div id="modalTotalWrapper" class="flex justify-center items-baseline gap-2 mb-4 w-full transition-all duration-500 ease-out origin-top shrink-0 mt-auto">
+                        <span id="modalTotalPay" class="text-5xl sm:text-6xl font-black text-blue-500 drop-shadow-md">0</span>
+                        <span class="text-2xl sm:text-3xl font-extrabold text-blue-600">฿</span>
                     </div>
 
-                <div class="bg-gray-50 p-2 rounded-xl border border-gray-100 text-center mb-4 relative group-qr">
-                    <button onclick="togglePaymentMenu()" class="absolute top-3 right-3 z-20 w-8 h-8 bg-white/90 hover:bg-white rounded-full text-gray-500 hover:text-blue-500 shadow-md flex items-center justify-center transition backdrop-blur-sm border border-gray-200"><i class="fas fa-ellipsis-v"></i></button>
-                    
-                    <div id="paymentSettingsMenu" class="hidden absolute top-12 right-3 z-30 bg-white shadow-xl rounded-xl border border-gray-100 p-1.5 w-44 flex flex-col gap-1 animate-pop origin-top-right">
-                        <button onclick="openPromptPayModal(); togglePaymentMenu()" class="text-left text-xs font-bold text-blue-600 hover:bg-blue-50 p-2 rounded-lg transition flex items-center"><i class="fas fa-cog w-6 text-center mr-1"></i> ตั้งค่าพร้อมเพย์</button>
-                        <button onclick="checkAndUseOriginalQR(); togglePaymentMenu()" class="text-left text-xs font-bold text-gray-600 hover:bg-gray-100 p-2 rounded-lg transition flex items-center"><i class="fas fa-image w-6 text-center mr-1"></i> ใช้รูปเดิม</button>
-                        <div class="h-px bg-gray-100 my-0.5"></div>
-                        <button onclick="document.getElementById('bankQRInput').click(); togglePaymentMenu()" class="text-left text-xs font-bold text-gray-500 hover:bg-gray-100 p-2 rounded-lg transition flex items-center"><i class="fas fa-upload w-6 text-center mr-1"></i> อัปโหลดรูปใหม่</button>
+                    <div class="mb-4 relative text-center shrink-0">
+                        <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wide">ยอดเงินที่รับ</label>
+                        <div class="relative">
+                            <input type="text" id="inputReceived" inputmode="none" oninput="this.value = this.value.replace(/[^0-9]/g, ''); calcChange()" onkeydown="checkPaymentEnter(event)" class="w-2/3 mx-auto block text-xl font-bold text-center border-2 border-blue-400 rounded-xl py-2 px-3 text-blue-600 placeholder-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-300 outline-none transition-all shadow-inner bg-blue-50" placeholder="0">
+                        </div>
                     </div>
                     
-                    <div class="relative overflow-hidden rounded-lg bg-white h-48 flex items-center justify-center cursor-pointer group shadow-inner" onclick="handleQRClick()">
-                        <img id="bankQRImage" src="" class="h-full w-auto object-contain p-2" alt="QR">
-                        <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition"><span class="text-white text-xs font-bold"><i class="fas fa-expand"></i> ดูรูปเต็ม</span></div>
-                    </div>
-                    <input type="file" id="bankQRInput" class="hidden" accept="image/*" onchange="uploadBankQRFile(this)">
+                    <button onclick="confirmPayment()" id="btnConfirmPay" class="w-full mx-auto block bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl text-lg shadow-lg transition transform active:scale-95 shrink-0">ยืนยันรับเงิน</button>
                 </div>
-                
-                <div id="modalTotalWrapper" class="flex justify-center items-baseline gap-2 mb-4 w-full transition-all duration-500 ease-out origin-top">
-                    <span id="modalTotalPay" class="text-6xl font-black text-blue-500 drop-shadow-md">0</span>
-                    <span class="text-3xl font-extrabold text-blue-600">฿</span>
-                </div>
-
-                <div class="mb-4 relative text-center">
-                    <label class="block text-[10px] font-bold text-gray-400 mb-1 uppercase tracking-wide">ยอดเงินที่รับ</label>
-                    <div class="relative">
-                        <input type="text" id="inputReceived" inputmode="none" oninput="this.value = this.value.replace(/[^0-9]/g, ''); calcChange()" onkeydown="checkPaymentEnter(event)" class="w-1/3 mx-auto block text-base font-bold text-center border border-blue-400 rounded-md py-1 px-2 text-blue-600 placeholder-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-300 outline-none transition-all shadow-inner bg-blue-50" placeholder="0">
-                    </div>
-                </div>
-                
-                <button onclick="confirmPayment()" id="btnConfirmPay" class="w-full mx-auto block bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl text-lg shadow-lg transition transform active:scale-95">ยืนยันรับเงิน</button>
             </div>
         </div>
     </div>

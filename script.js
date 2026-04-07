@@ -636,9 +636,9 @@ function quickCheckout() {
     const tableContainer = document.getElementById('quickPayTableNoContainer'); if (tableContainer) tableContainer.classList.add('hidden'); 
     try { initBankQR(); } catch(e) { console.log("QR Init Error", e); }
     const modal = document.getElementById('paymentModal'); if (modal) modal.classList.remove('hidden'); 
-    const leftPanel = document.getElementById('leftPanel'); if(leftPanel) leftPanel.classList.add('blur-sm', 'opacity-50', 'pointer-events-none');
+    
     const modalTotal = document.getElementById('modalTotalPay');
-    if(modalTotal) { modalTotal.innerText = total.toLocaleString(); modalTotal.className = "text-7xl sm:text-8xl font-black text-blue-600 drop-shadow-xl tracking-tighter"; }
+    if(modalTotal) { modalTotal.innerText = total.toLocaleString(); }
     
     const modalChangeBox = document.getElementById('modalChangeBox');
     if(modalChangeBox) { modalChangeBox.classList.add('opacity-0', 'translate-y-2'); modalChangeBox.innerHTML = `เงินทอน: <span id="modalChangePay" class="text-green-600 text-5xl font-extrabold ml-2 drop-shadow-sm animate-heartbeat">0</span> <span class="ml-1 text-sm">฿</span>`; }
@@ -649,6 +649,9 @@ function quickCheckout() {
     if (changeWrapper) { changeWrapper.classList.add('hidden', 'opacity-0', 'translate-y-4'); changeWrapper.classList.remove('flex', 'opacity-100', 'translate-y-0'); }
     const btnConfirm = document.getElementById('btnConfirmPay'); if (btnConfirm) { btnConfirm.disabled = false; btnConfirm.classList.remove('opacity-50', 'cursor-not-allowed'); }
     if (total > 0) { speak("ยอดรวม " + total + " บาท"); }
+    
+    // วาดใบเสร็จฝั่งซ้าย
+    if(typeof renderPaymentReceipt === 'function') renderPaymentReceipt();
 }
 
 function openConfirmOrderModal() {
@@ -798,13 +801,16 @@ function openPayment(orderId) {
     cart = JSON.parse(JSON.stringify(currentPayOrder.items)); renderCart(); toggleCart(true); closeModal('kitchenModal');
     isQuickPayMode = false; document.getElementById('quickPayTableNoContainer').classList.add('hidden');
     initBankQR(); document.getElementById('paymentModal').classList.remove('hidden'); 
-    const leftPanel = document.getElementById('leftPanel'); if(leftPanel) leftPanel.classList.add('blur-sm', 'opacity-50', 'pointer-events-none');
+    
     const totalEl = document.getElementById('modalTotalPay'); 
-    if(totalEl) { totalEl.innerText = currentPayOrder.totalPrice.toLocaleString(); totalEl.className = "text-7xl sm:text-8xl font-black text-blue-600 drop-shadow-xl tracking-tighter"; }
+    if(totalEl) { totalEl.innerText = currentPayOrder.totalPrice.toLocaleString(); }
     const inputRec = document.getElementById('inputReceived'); if(inputRec) { inputRec.value = ''; setTimeout(() => { inputRec.focus(); }, 300); }
     const modalChangeBox = document.getElementById('modalChangeBox'); if(modalChangeBox) { modalChangeBox.classList.add('opacity-0', 'translate-y-2'); const changeTxt = document.getElementById('modalChangePay'); if(changeTxt) changeTxt.innerText = "0"; }
     const btnConfirm = document.getElementById('btnConfirmPay'); if(btnConfirm) { btnConfirm.disabled = false; btnConfirm.classList.remove('opacity-50', 'cursor-not-allowed'); }
     speak("ยอดรวม " + currentPayOrder.totalPrice + " บาท"); setTimeout(() => { document.getElementById('inputReceived').focus(); }, 100);
+    
+    // วาดใบเสร็จฝั่งซ้าย
+    if(typeof renderPaymentReceipt === 'function') renderPaymentReceipt();
 }
 
 function addMoney(amount) { const input = document.getElementById('inputReceived'); input.value = Number(input.value) + amount; calcChange(); }
@@ -833,6 +839,8 @@ function calcChange() {
     } 
     if(btn) { btn.disabled = false; btn.classList.remove('opacity-50', 'cursor-not-allowed'); }
     if(received >= total) { inputEl.classList.replace('border-blue-500', 'border-green-500'); inputEl.classList.replace('text-blue-600', 'text-green-600'); } else { inputEl.classList.replace('border-green-500', 'border-blue-500'); inputEl.classList.replace('text-green-600', 'text-blue-600'); }
+
+    if(typeof updateSlipChange === 'function') updateSlipChange();
 }
 
 function confirmPayment() { 
@@ -2420,4 +2428,66 @@ async function exportProductsPDF() {
         console.error("Export PDF Error:", e);
         showCustomAlert('ผิดพลาด', 'ไม่สามารถสร้างไฟล์ PDF ได้');
     }
+}
+
+function renderPaymentReceipt() {
+    const container = document.getElementById('paymentReceiptItems');
+    if (!container) return;
+
+    const dateEl = document.getElementById('slipDate');
+    const orderNoEl = document.getElementById('slipOrderNo');
+    const now = new Date();
+
+    if(dateEl) {
+        dateEl.innerText = now.toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' }) + ' ' + now.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    
+    if (orderNoEl) {
+        orderNoEl.innerText = currentPayOrder && currentPayOrder.orderId ? currentPayOrder.orderId : ("W-" + Math.floor(Math.random() * 100000));
+    }
+
+    let total = 0;
+    let totalQty = 0;
+    
+    const itemsHtml = cart.map(item => {
+        const itemTotal = item.price * item.qty;
+        total += itemTotal;
+        totalQty += item.qty;
+        
+        return `
+        <div class="leading-tight mb-1">
+            <div class="break-words">${item.qty} ${item.name}</div>
+            <div class="flex justify-end gap-2 mt-0.5">
+                <span class="w-16 text-right">${item.price.toLocaleString('th-TH', {minimumFractionDigits: 2})}</span>
+                <span class="w-16 text-right">${itemTotal.toLocaleString('th-TH', {minimumFractionDigits: 2})}</span>
+            </div>
+        </div>`;
+    }).join('');
+
+    container.innerHTML = itemsHtml;
+    
+    const totalFormatted = total.toLocaleString('th-TH', {minimumFractionDigits: 2});
+    if(document.getElementById('paymentReceiptTotal')) document.getElementById('paymentReceiptTotal').innerText = totalFormatted;
+    if(document.getElementById('paymentReceiptTotal2')) document.getElementById('paymentReceiptTotal2').innerText = totalFormatted;
+    if(document.getElementById('slipItemCount')) document.getElementById('slipItemCount').innerText = cart.length;
+    if(document.getElementById('slipTotalQty')) document.getElementById('slipTotalQty').innerText = totalQty;
+    
+    updateSlipChange();
+}
+
+function updateSlipChange() {
+    const inputEl = document.getElementById('inputReceived');
+    const recvEl = document.getElementById('slipReceived');
+    const changeEl = document.getElementById('slipChange');
+    if (!recvEl || !changeEl) return;
+    
+    let received = Number(inputEl.value) || 0;
+    let total = currentPayOrder ? currentPayOrder.totalPrice : cart.reduce((sum, i) => sum + (i.price * i.qty), 0);
+    
+    recvEl.innerText = (received === 0 ? "0.00" : received.toLocaleString('th-TH', {minimumFractionDigits: 2}));
+    
+    let change = received - total;
+    if (change < 0 || received === 0) change = 0;
+    
+    changeEl.innerText = change.toLocaleString('th-TH', {minimumFractionDigits: 2});
 }
