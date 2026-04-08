@@ -990,16 +990,110 @@ function renderHistoryList() {
 }
 
 function openBillDetail(index) {
-    const bill = historyBills[index]; if (!bill) return;
-    const d = new Date(bill.date); const dateStr = d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: '2-digit' }); const timeStr = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-    const tableNo = bill.table || 'N/A'; const customerMatch = tableNo.match(/(.*)\s*\((.*?)\)\s*(\[ส่งที่:\s*.*\])?/); const customerName = customerMatch ? customerMatch[1].trim() : tableNo; const customerPhone = customerMatch && customerMatch[2] ? customerMatch[2].trim() : ''; const customerAddress = customerMatch && customerMatch[3] ? customerMatch[3] : '';
+    const bill = historyBills[index]; 
+    if (!bill) return;
+
+    // จัดการวันที่และเวลา
+    const d = new Date(bill.date); 
+    const dateStr = d.toLocaleDateString('th-TH', { day: '2-digit', month: '2-digit', year: 'numeric' }); 
+    const timeStr = d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    // จัดการข้อมูลลูกค้าและที่อยู่
+    const tableNo = bill.table || 'N/A'; 
+    const customerMatch = tableNo.match(/(.*)\s*\((.*?)\)\s*(\[ส่งที่:\s*.*\])?/); 
+    const customerName = customerMatch ? customerMatch[1].trim() : tableNo; 
+    const customerPhone = customerMatch && customerMatch[2] ? customerMatch[2].trim() : ''; 
+    const customerAddress = customerMatch && customerMatch[3] ? customerMatch[3] : '';
+    
+    let totalQty = 0;
+    let itemCount = bill.items.length;
+    
+    // สร้าง HTML สำหรับรายการสินค้า
+    const itemsHtml = bill.items.map(item => {
+        totalQty += item.qty;
+        const itemTotal = item.price * item.qty;
+        return `
+        <div class="leading-tight mb-1">
+            <div class="break-words">${item.qty} ${item.name}</div>
+            <div class="flex justify-end gap-2 mt-0.5">
+                <span class="w-14 text-right">${item.price.toLocaleString('th-TH', {minimumFractionDigits: 2})}</span>
+                <span class="w-16 text-right">${itemTotal.toLocaleString('th-TH', {minimumFractionDigits: 2})}</span>
+            </div>
+        </div>`;
+    }).join('');
+
     const content = document.getElementById('billDetailContent');
-    const itemsHtml = bill.items.map(item => `<div class="flex justify-between items-start text-sm border-b border-dashed border-gray-200 py-2"><div class="flex-1 pr-2"><div class="font-medium text-gray-800">${item.name}</div><div class="text-xs text-gray-500">${item.price.toLocaleString()} x ${item.qty}</div></div><div class="w-16 text-right font-bold text-gray-800">${(item.price * item.qty).toLocaleString()}</div></div>`).join('');
     content.innerHTML = `
-        <div class="p-4 pt-6 bg-white border-b border-gray-200 flex-shrink-0"><div class="text-center pb-3 border-b border-dashed border-gray-300"><h3 class="text-2xl font-extrabold text-gray-800 mb-1">ใบเสร็จรับเงิน</h3><p class="text-xs text-gray-500 mb-2">บิล ID: ${bill.billId}</p></div><div class="pt-4 pb-2 text-xs space-y-1"><div class="flex justify-between"><span class="text-gray-500">วัน/เวลา:</span><span class="font-bold text-gray-700">${dateStr} ${timeStr}</span></div><div class="font-bold text-gray-700 pt-2 border-t border-dashed"><i class="fas fa-user-tag mr-2 text-blue-500"></i> ลูกค้า: ${customerName} ${customerPhone ? `(${customerPhone})` : ''}</div>${customerAddress ? `<div class="text-gray-500 text-xs"><i class="fas fa-map-marker-alt text-red-500 mr-1"></i> ที่อยู่: ${customerAddress.replace(/\[ส่งที่:\s*|\]/g, '').trim()}</div>` : ''}${bill.note ? `<div class="text-gray-500 pt-2 border-t border-dashed">หมายเหตุ: ${bill.note}</div>` : ''}</div></div>
-        <div class="flex-1 overflow-y-auto custom-scrollbar bg-white px-4 border-b border-gray-200"> <div class="pt-2 pb-2 space-y-1">${itemsHtml}</div></div>
-        <div class="p-4 flex-shrink-0 border-t border-gray-200 bg-white"><div class="pb-3 space-y-2 border-b border-gray-300"><div class="flex justify-between font-bold text-lg"><span class="text-gray-700">รวมทั้งสิ้น</span><span class="text-2xl font-extrabold text-blue-600">${bill.total.toLocaleString()} ฿</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">รับเงิน</span><span class="font-bold text-gray-700">${parseFloat(bill.receive || bill.total).toLocaleString()} ฿</span></div><div class="flex justify-between text-sm"><span class="text-gray-500">เงินทอน</span><span class="font-bold text-green-600">${parseFloat(bill.change || 0).toLocaleString()} ฿</span></div></div><div class="mt-4 flex gap-2 items-center"><button onclick="printReceiptFromIndex(${index})" class="bg-blue-500 hover:bg-blue-600 text-white w-1/4 py-2 rounded-xl text-sm font-bold transition shadow-md"><i class="fas fa-print"></i> พิมพ์</button><button onclick="confirmDeleteBill('${bill.billId}')" class="bg-red-600 hover:bg-red-700 text-white w-1/4 py-2 rounded-xl text-sm font-bold transition shadow-md"><i class="fas fa-trash-alt"></i> ลบ</button><button onclick="closeModal('billDetailModal')" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-xl font-bold transition">ปิดหน้าต่าง</button></div></div>
+        <div class="flex-1 overflow-y-auto bg-gray-100 p-4 custom-scrollbar flex flex-col items-center justify-start relative">
+            
+            <button onclick="closeModal('billDetailModal')" class="absolute top-4 right-4 bg-white hover:bg-red-50 text-gray-400 hover:text-red-500 w-9 h-9 rounded-full flex items-center justify-center transition-all shadow-sm z-20 active:scale-95 border border-gray-200">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+
+            <div class="bg-white w-full max-w-[280px] text-gray-800 text-[11px] shadow-sm p-4 pb-6 relative font-mono shrink-0 mb-5 mt-8">
+                <div class="text-center mb-3">
+                    <h3 class="font-bold text-[14px]">ร้านเจ้พินขายของชำ</h3>
+                    <p>29/30 บ่อวิน ศรีราชา ชลบุรี 20230</p>
+                    <p class="mt-2 font-bold text-[13px]">ใบเสร็จรับเงิน</p>
+                </div>
+                
+                <div class="mb-2 space-y-0.5">
+                    <div class="flex gap-2"><span>เลขที่:</span> <span>${bill.billId}</span></div>
+                    <div class="flex gap-2"><span>วันที่:</span> <span>${dateStr} ${timeStr}</span></div>
+                    ${customerName && customerName !== 'Walk-in' && customerName !== 'หน้าร้าน' ? `<div class="flex gap-2 mt-1"><span class="shrink-0">ลูกค้า:</span> <span class="break-words">${customerName} ${customerPhone}</span></div>` : ''}
+                    ${customerAddress ? `<div class="flex gap-2"><span class="shrink-0">ที่อยู่:</span> <span class="break-words">${customerAddress.replace(/\[ส่งที่:\s*|\]/g, '').trim()}</span></div>` : ''}
+                    ${bill.note ? `<div class="flex gap-2"><span class="shrink-0">หมายเหตุ:</span> <span class="break-words">${bill.note}</span></div>` : ''}
+                </div>
+                
+                <div class="border-t border-b border-gray-800 py-1 mb-2 flex font-bold">
+                    <div class="flex-1 text-center">รายการ</div>
+                    <div class="w-14 text-right">หน่วยละ</div>
+                    <div class="w-16 text-right">รวมเงิน</div>
+                </div>
+                
+                <div class="space-y-1.5 mb-2 min-h-[50px]">
+                    ${itemsHtml}
+                </div>
+                
+                <div class="border-t border-gray-800 pt-1 pb-1">
+                    <div class="flex gap-4">
+                        <span>รายการ: <span>${itemCount}</span></span>
+                        <span>จำนวนชิ้น: <span>${totalQty}</span></span>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-800 pt-1 space-y-1">
+                    <div class="flex justify-between font-bold">
+                        <span>รวมเป็นเงิน</span>
+                        <span>${parseFloat(bill.total).toLocaleString('th-TH', {minimumFractionDigits: 2})}</span>
+                    </div>
+                    <div class="flex justify-between font-bold text-[13px] mt-1">
+                        <span>รวมทั้งสิ้น</span>
+                        <span>${parseFloat(bill.total).toLocaleString('th-TH', {minimumFractionDigits: 2})}</span>
+                    </div>
+                </div>
+                
+                <div class="border-t border-gray-800 pt-1 mt-2 flex justify-between">
+                    <span>รับเงิน <span>${parseFloat(bill.receive || bill.total).toLocaleString('th-TH', {minimumFractionDigits: 2})}</span></span>
+                    <span>เงินทอน <span>${parseFloat(bill.change || 0).toLocaleString('th-TH', {minimumFractionDigits: 2})}</span></span>
+                </div>
+                
+                <div class="text-center mt-6 pt-2">
+                    <p>ขอบคุณที่ใช้บริการ</p>
+                </div>
+
+                <div class="absolute bottom-0 left-0 right-0 h-2 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI4IiBoZWlnaHQ9IjgiPjxwb2x5Z29uIGZpbGw9IiNmM2Y0ZjYiIHBvaW50cz0iMCA4IDQgMCA4IDgiLz48L3N2Zz4=')]"></div>
+            </div>
+
+            <div class="w-full max-w-[280px] flex gap-2 shrink-0 pb-4">
+                <button onclick="printReceiptFromIndex(${index})" class="bg-blue-500 hover:bg-blue-600 text-white w-1/4 py-3 rounded-xl text-lg font-bold transition shadow-md flex justify-center items-center active:scale-95"><i class="fas fa-print"></i></button>
+                <button onclick="confirmDeleteBill('${bill.billId}')" class="bg-red-600 hover:bg-red-700 text-white w-1/4 py-3 rounded-xl text-lg font-bold transition shadow-md flex justify-center items-center active:scale-95"><i class="fas fa-trash-alt"></i></button>
+                <button onclick="closeModal('billDetailModal')" class="flex-1 bg-gray-800 hover:bg-gray-900 text-white py-3 rounded-xl font-bold transition shadow-md active:scale-95">ปิดหน้าต่าง</button>
+            </div>
+            
+        </div>
     `;
+    
     document.getElementById('billDetailModal').classList.remove('hidden');
 }
 
