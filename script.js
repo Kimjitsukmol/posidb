@@ -270,9 +270,6 @@ function generatePayload(mobileNumber, amount) {
     return rawData + crc16(rawData);
 }
 
-// ==========================================
-// ⌨️ SHORTCUTS & INPUT HANDLING
-// ==========================================
 let lastDotTime = 0; 
 function initGlobalShortcuts() {
     document.addEventListener('keydown', function(event) {
@@ -284,23 +281,37 @@ function initGlobalShortcuts() {
 
     document.addEventListener('keyup', function(event) {
         const code = event.code; const key = event.key;
+        
+        // กรณีกดปุ่ม +
         if (code === 'NumpadAdd' || key === '+' || event.keyCode === 107) {
             event.preventDefault(); event.stopPropagation();
             const paymentModal = document.getElementById('paymentModal');
-            if (paymentModal && !paymentModal.classList.contains('hidden')) { closeModal('paymentModal'); setTimeout(() => { const searchInput = document.getElementById('searchInput'); if (searchInput) { searchInput.focus(); searchInput.value = ''; } }, 100); } 
+            if (paymentModal && !paymentModal.classList.contains('hidden')) { 
+                closeModal('paymentModal'); 
+                setTimeout(() => { const searchInput = document.getElementById('searchInput'); if (searchInput) { searchInput.focus(); searchInput.value = ''; } }, 100); 
+            } 
             else { const searchInput = document.getElementById('searchInput'); if (searchInput) searchInput.blur(); handleCheckoutClick(); }
             return false;
         }
 
+        // กรณีกดปุ่ม .
         if (code === 'NumpadDecimal' || key === '.' || event.keyCode === 110 || event.keyCode === 190) {
             event.preventDefault(); event.stopPropagation();
-            const now = Date.now();
-            if (now - lastDotTime < 500) { 
-                const paymentModal = document.getElementById('paymentModal');
-                if (paymentModal && !paymentModal.classList.contains('hidden')) { closeModal('paymentModal'); setTimeout(() => { const searchInput = document.getElementById('searchInput'); if (searchInput) { searchInput.focus(); searchInput.value = ''; } }, 100); } 
-                else { const searchInput = document.getElementById('searchInput'); if(searchInput) { searchInput.focus(); searchInput.value = ''; } }
-                lastDotTime = 0; 
-            } else { lastDotTime = now; }
+            const paymentModal = document.getElementById('paymentModal');
+            
+            // ถ้าหน้าต่างรับเงินเปิดอยู่ กด . ครั้งเดียวให้ปิดเลย
+            if (paymentModal && !paymentModal.classList.contains('hidden')) { 
+                closeModal('paymentModal'); 
+                setTimeout(() => { const searchInput = document.getElementById('searchInput'); if (searchInput) { searchInput.focus(); searchInput.value = ''; } }, 100); 
+            } 
+            else { 
+                // ถ้าหน้าต่างรับเงินปิดอยู่ ต้องกด . 2 ครั้งติดกัน (ภายใน 500ms) ถึงจะโฟกัสช่องค้นหา
+                const now = Date.now();
+                if (now - lastDotTime < 500) { 
+                    const searchInput = document.getElementById('searchInput'); if(searchInput) { searchInput.focus(); searchInput.value = ''; }
+                    lastDotTime = 0; 
+                } else { lastDotTime = now; }
+            }
             return false;
         }
     }, true); 
@@ -408,13 +419,21 @@ function handleSearchKeydown(event) {
 }
 
 function checkPaymentEnter(e) { 
-    if (e.key === '+' || e.code === 'NumpadAdd' || e.key === 'Add' || e.keyCode === 107) { 
-        e.preventDefault(); closeModal('paymentModal'); 
-        setTimeout(() => { const searchInput = document.getElementById('searchInput'); if (searchInput) { searchInput.focus(); searchInput.value = ''; } }, 100); return; 
+    // กรณีจิ้มปุ่ม + หรือปุ่ม . ให้ปิดหน้าต่างรับเงิน แล้วไปโฟกัสช่องค้นหา
+    if (e.key === '+' || e.code === 'NumpadAdd' || e.key === 'Add' || e.keyCode === 107 || 
+        e.key === '.' || e.code === 'NumpadDecimal' || e.key === 'Decimal' || e.keyCode === 110 || e.keyCode === 190) { 
+        e.preventDefault(); 
+        closeModal('paymentModal'); 
+        setTimeout(() => { const searchInput = document.getElementById('searchInput'); if (searchInput) { searchInput.focus(); searchInput.value = ''; } }, 100); 
+        return; 
     }
-    if (e.key === '.' || e.code === 'NumpadDecimal' || e.key === 'Decimal' || e.keyCode === 110 || e.keyCode === 190) { e.preventDefault(); return; }
-    if (e.key === '0' || e.code === 'Numpad0' || e.keyCode === 48 || e.keyCode === 96) { if (e.target.value === '') { e.preventDefault(); return; } }
     
+    // กันไม่ให้พิมพ์ 0 เป็นตัวแรก
+    if (e.key === '0' || e.code === 'Numpad0' || e.keyCode === 48 || e.keyCode === 96) { 
+        if (e.target.value === '') { e.preventDefault(); return; } 
+    }
+    
+    // กรณีกด Enter รับเงิน
     if (e.key === 'Enter' || e.code === 'NumpadEnter' || e.keyCode === 13) { 
         e.preventDefault(); 
         const inputVal = Number(document.getElementById('inputReceived').value);
