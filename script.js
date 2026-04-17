@@ -1432,26 +1432,59 @@ function dbClear(store) {
 async function backupData() {
     setLoading('btnBackup', true, 'กำลังบันทึก...');
     try {
-        const menu = await dbGetAll('menu');
+        // ดึงเฉพาะข้อมูลประวัติการขาย (History)
         const history = await dbGetAll('history');
-        const settings = await dbGetAll('settings');
 
-        const backupObj = {
-            timestamp: new Date().toISOString(),
-            menu: menu,
-            history: history,
-            settings: settings
-        };
+        if (!history || history.length === 0) {
+            showToast('ไม่มีข้อมูลประวัติการขายเพื่อ Backup', 'warning');
+            setLoading('btnBackup', false, 'สร้างไฟล์ Backup');
+            return;
+        }
 
-        const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backupObj));
+        // ใส่ BOM (\uFEFF) เพื่อให้ Excel อ่านภาษาไทยได้โดยไม่เพี้ยน
+        let csvContent = "\uFEFF";
+        
+        // สร้าง Header ของ CSV ให้ตรงกับฟิลด์ของตารางประวัติการขาย
+        csvContent += "Bill ID,Date,Table,Type,Item Summary,Items (JSON),Total,Receive,Change,Note\n";
+
+        // วนลูปข้อมูลประวัติการขายแต่ละรายการมาจัดเรียงในรูปแบบ CSV
+        history.forEach(b => {
+            // ใส่ Double Quote ครอบข้อความเพื่อป้องกันปัญหาคอมม่า (,) ในเนื้อหา
+            const billId = `"${(b.billId || '').toString().replace(/"/g, '""')}"`;
+            const date = `"${(b.date || '').toString().replace(/"/g, '""')}"`;
+            const table = `"${(b.table || '').toString().replace(/"/g, '""')}"`;
+            const type = `"${(b.type || '').toString().replace(/"/g, '""')}"`;
+            const itemSummary = `"${(b.itemSummary || '').toString().replace(/"/g, '""')}"`;
+            
+            // แปลงรายละเอียดสินค้า (Array/Object) ให้เป็น String
+            let itemsStr = "";
+            if (typeof b.items === 'string') {
+                itemsStr = b.items;
+            } else {
+                try { itemsStr = JSON.stringify(b.items); } catch(e) {}
+            }
+            const items = `"${itemsStr.replace(/"/g, '""')}"`;
+            
+            const total = parseFloat(b.total || 0);
+            const receive = parseFloat(b.receive || 0);
+            const change = parseFloat(b.change || 0);
+            const note = `"${(b.note || '').toString().replace(/"/g, '""')}"`;
+
+            // ต่อข้อมูลในบรรทัดเดียวกัน คั่นด้วยคอมม่า
+            csvContent += `${billId},${date},${table},${type},${itemSummary},${items},${total},${receive},${change},${note}\n`;
+        });
+
+        // สร้างไฟล์ CSV และบังคับดาวน์โหลด
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
         const downloadAnchorNode = document.createElement('a');
-        downloadAnchorNode.setAttribute("href", dataStr);
-        downloadAnchorNode.setAttribute("download", "pos_backup_" + new Date().toISOString().split('T')[0] + ".json");
+        downloadAnchorNode.setAttribute("href", url);
+        downloadAnchorNode.setAttribute("download", "sales_history_backup_" + new Date().toISOString().split('T')[0] + ".csv");
         document.body.appendChild(downloadAnchorNode); 
         downloadAnchorNode.click();
         downloadAnchorNode.remove();
 
-        showToast('ดาวน์โหลดไฟล์สำรองข้อมูลเรียบร้อย', 'success');
+        showToast('ดาวน์โหลดไฟล์สำรองข้อมูล (CSV) เรียบร้อย', 'success');
         closeModal('exportModal'); 
 
     } catch(e) {
@@ -1460,6 +1493,7 @@ async function backupData() {
         setLoading('btnBackup', false, 'สร้างไฟล์ Backup');
     }
 }
+
 
 async function restoreData(event) {
     const file = event.target.files[0];
